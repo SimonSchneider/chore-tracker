@@ -30,6 +30,7 @@ func WithCompression(h http.Handler) http.Handler {
 			gz := NewGzipResponseWriter(w)
 			defer gz.Close()
 			h.ServeHTTP(gz, r)
+			return
 		}
 		h.ServeHTTP(w, r)
 	})

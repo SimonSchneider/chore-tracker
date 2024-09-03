@@ -21,7 +21,6 @@ type FormParser interface {
 
 func Decode(r *http.Request, t any, acceptEmpty bool) error {
 	ct := r.Header.Get("Content-Type")
-	fmt.Printf("Content-Type: %s, acceptEmpty: %s\n", ct, acceptEmpty)
 	switch ct {
 	case "application/json":
 		if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
@@ -33,6 +32,7 @@ func Decode(r *http.Request, t any, acceptEmpty bool) error {
 			if err := p.FromForm(r); err != nil {
 				return Err(http.StatusBadRequest, fmt.Errorf("failed to parse form: %w", err))
 			}
+			return nil
 		}
 		return Err(http.StatusUnsupportedMediaType, fmt.Errorf("unsupported content type: %s", ct))
 	case "":

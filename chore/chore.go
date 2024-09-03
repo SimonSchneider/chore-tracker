@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"net/http"
 	"time"
 )
 
@@ -22,7 +23,7 @@ type Event struct {
 
 func Setup(ctx context.Context, db Execer) error {
 	_, err := db.ExecContext(ctx, `
-CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id TEXT NOT NULL, occurred_at DATETIME NOT NULL, FOREIGN KEY (chore_id) REFERENCES chore(id));
 `)
 	if err != nil {
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id T
 func List(ctx context.Context, db Queryer) ([]Chore, error) {
 	rows, err := db.QueryContext(ctx, "SELECT c.id, c.name, c.interval, e.id, e.occurred_at FROM chore c LEFT OUTER JOIN chore_event e ON c.id = e.chore_id ORDER BY e.occurred_at DESC")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying chores: %w", err)
 	}
 	defer rows.Close()
 	chores := make([]Chore, 0)
@@ -49,6 +50,17 @@ func List(ctx context.Context, db Queryer) ([]Chore, error) {
 type Input struct {
 	Name     string   `json:"name"`
 	Interval Duration `json:"interval"`
+}
+
+func (i *Input) FromForm(r *http.Request) error {
+	i.Name = r.FormValue("name")
+	interVal := r.FormValue("interval")
+	inter, err := ParseDuration(interVal)
+	if err != nil {
+		return fmt.Errorf("illegal interval '%s': %w", interVal, err)
+	}
+	i.Interval = inter
+	return nil
 }
 
 func Create(ctx context.Context, db Preparer, input Input) (*Chore, error) {

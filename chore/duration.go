@@ -1,9 +1,7 @@
 package chore
 
 import (
-	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"time"
 )
 
@@ -21,25 +19,26 @@ func (d Duration) String() string {
 	return time.Duration(d).String()
 }
 
-func (d Duration) Value() (driver.Value, error) {
-	return d.String(), nil
-}
-
-func (d *Duration) Scan(src any) error {
-	switch v := src.(type) {
-	case int64:
-		*d = Duration(v)
-	case string:
-		dur, err := time.ParseDuration(v)
-		if err != nil {
-			return err
-		}
-		*d = Duration(dur)
-	default:
-		return errors.New("unsupported type")
-	}
-	return nil
-}
+//
+//func (d Duration) Value() (driver.Value, error) {
+//	return d.String(), nil
+//}
+//
+//func (d *Duration) Scan(src any) error {
+//	switch v := src.(type) {
+//	case int64:
+//		*d = Duration(v)
+//	case string:
+//		dur, err := time.ParseDuration(v)
+//		if err != nil {
+//			return err
+//		}
+//		*d = Duration(dur)
+//	default:
+//		return errors.New("unsupported type")
+//	}
+//	return nil
+//}
 
 func (d Duration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(time.Duration(d).String())
