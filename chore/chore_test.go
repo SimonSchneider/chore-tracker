@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/SimonSchneider/go-testing/chore"
+	"github.com/SimonSchneider/go-testing/duration"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +25,7 @@ func Must[T any](v T, err error) T {
 }
 
 func TestDurationMarshaling(t *testing.T) {
-	c := chore.Duration(time.Hour)
+	c := duration.Duration(time.Hour)
 	b, err := json.Marshal(c)
 	if err != nil {
 		t.Fatalf("unexpected error: marshal: %v", err)
@@ -32,7 +33,7 @@ func TestDurationMarshaling(t *testing.T) {
 	if string(b) != `"1h0m0s"` {
 		t.Fatalf("unexpected json: %s", string(b))
 	}
-	var parsed chore.Duration
+	var parsed duration.Duration
 	if err := json.Unmarshal(b, &parsed); err != nil {
 		t.Fatalf("unexpected error: unmarshal: %v", err)
 	}
@@ -52,16 +53,14 @@ func TestDB(t *testing.T) {
 	if err := chore.Setup(ctx, db); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	ch, err := chore.Create(ctx, db, chore.Input{Name: "simon", Interval: Must(chore.ParseDuration("24h"))})
+	ch, err := chore.Create(ctx, db, chore.Input{Name: "simon", Interval: Must(duration.ParseDuration("24h"))})
 	if err != nil {
 		t.Fatalf("failed: %v", err)
 	}
 	t.Logf("added chore: %+v", ch)
-	afterComp, err := chore.Complete(ctx, db, ch.ID, time.Now())
-	if err != nil {
+	if err := chore.Complete(ctx, db, ch.ID, time.Now()); err != nil {
 		t.Fatalf("couldn't complete: %v", err)
 	}
-	t.Logf("completed chore: %+v", afterComp)
 	chores, err := chore.List(ctx, db)
 	t.Logf("chores: %+v", chores)
 	if err != nil {
@@ -74,9 +73,6 @@ func TestDB(t *testing.T) {
 	if chore.ID != ch.ID {
 		t.Fatalf("unexpected id: %s", chore.ID)
 	}
-	//if chore.History[0].ID != "1" {
-	//	t.Fatalf("unexpected history id: %s", chore.History[0].ID)
-	//}
 }
 
 func MustT(t *testing.T, err error, msg string) {
@@ -105,7 +101,7 @@ func setup(ctx context.Context) (*http.ServeMux, error) {
 func createBody(name string, interval string) *chore.Input {
 	return &chore.Input{
 		Name:     name,
-		Interval: Must(chore.ParseDuration(interval)),
+		Interval: Must(duration.ParseDuration(interval)),
 	}
 }
 

@@ -14,8 +14,8 @@ type Queryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-type Preparer interface {
-	PrepareContext(ctx context.Context, stmt string) (*sql.Stmt, error)
+type Beginner interface {
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
 
 func parseChoreWithEventRows(rows *sql.Rows, onChore func(chore *Chore)) error {
@@ -25,7 +25,6 @@ func parseChoreWithEventRows(rows *sql.Rows, onChore func(chore *Chore)) error {
 		tmpEventOccurredAt *time.Time
 		chore              Chore
 	)
-	tmpChore.History = make([]Event, 0)
 	for rows.Next() {
 		if err := rows.Scan(&tmpChore.ID, &tmpChore.Name, &tmpChore.Interval, &tmpEventID, &tmpEventOccurredAt); err != nil {
 			return err
@@ -34,6 +33,7 @@ func parseChoreWithEventRows(rows *sql.Rows, onChore func(chore *Chore)) error {
 			if chore.ID != "" {
 				onChore(&chore)
 			}
+			chore = tmpChore
 			chore.History = make([]Event, 0)
 		}
 		hist := chore.History
@@ -53,4 +53,11 @@ func parseChoreWithEventRows(rows *sql.Rows, onChore func(chore *Chore)) error {
 		onChore(&chore)
 	}
 	return nil
+}
+
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
 }

@@ -23,15 +23,17 @@ func (w *GzipResponseWriter) Close() error {
 	return w.gz.Close()
 }
 
-func WithCompression(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			w.Header().Set("Content-Encoding", "gzip")
-			gz := NewGzipResponseWriter(w)
-			defer gz.Close()
-			h.ServeHTTP(gz, r)
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
+func WithCompression() Middleware {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+				w.Header().Set("Content-Encoding", "gzip")
+				gz := NewGzipResponseWriter(w)
+				defer gz.Close()
+				h.ServeHTTP(gz, r)
+				return
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
 }

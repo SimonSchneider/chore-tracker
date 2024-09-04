@@ -1,0 +1,13 @@
+{{- /*gotype: github.com/SimonSchneider/go-testing/chore.Chore*/ -}}
+<li class="chore-element" id="chore-{{.ID}}">
+    <button class="complete" hx-post="/{{.ID}}/complete" hx-target="#chore-list-container" hx-swap="outerHTML">
+        Done
+    </button>
+    <form hx-put="/{{.ID}}" hx-target="#chore-list-container" hx-swap="outerHTML">
+        <input aria-label="chore name" name="name" type="text" value="{{.Name}}"/>
+        <input aria-label="chore interval" name="interval" type="text" value="{{.Interval}}"/>
+        <button type="submit">
+            Save
+        </button>
+    </form>
+</li>

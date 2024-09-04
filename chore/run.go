@@ -3,7 +3,6 @@ package chore
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/SimonSchneider/go-testing/srvu"
@@ -14,21 +13,20 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 )
 
 type flags struct {
-	addr   string
-	server bool
-	watch  bool
+	addr  string
+	watch bool
+	db    string
 }
 
 func parseFlags(args []string) (flags, error) {
 	fSet := flag.NewFlagSet("server", flag.ExitOnError)
 	cfg := flags{}
 	fSet.StringVar(&cfg.addr, "addr", "", "server address")
-	fSet.BoolVar(&cfg.server, "server", false, "run as server")
 	fSet.BoolVar(&cfg.watch, "watch", false, "watch for changes")
+	fSet.StringVar(&cfg.db, "db", "file::memory:?cache=shared", "db connection string")
 	if err := fSet.Parse(args[1:]); err != nil {
 		return cfg, err
 	}
@@ -36,9 +34,12 @@ func parseFlags(args []string) (flags, error) {
 }
 
 func getFS(watch bool) fs.FS {
-	if _, err := os.Stat("static"); err != nil {
-		panic(err)
+	if watch {
+		if _, err := os.Stat("static"); err == nil {
+			return os.DirFS("static")
+		}
 	}
+	// TODO: grab from embeddedFS
 	return os.DirFS("static")
 }
 
@@ -51,7 +52,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 	logger := log.New(stdout, "", log.LstdFlags)
 
-	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
+	db, err := sql.Open("sqlite3", cfg.db)
 	if err != nil {
 		return fmt.Errorf("opening db: %w", err)
 	}
@@ -60,36 +61,21 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 
 	var mux http.Handler
-	if cfg.server {
-		tmplProv := newTemplateProvider(getFS(cfg.watch), cfg.watch)
-		mux = NewHtmlMux(db, tmplProv)
-	} else {
-		mux = NewMux(db)
+	files := getFS(cfg.watch)
+	tmplProv := srvu.NewTemplateProvider(files, cfg.watch)
+	staticFiles, err := fs.Sub(files, "public")
+	if err != nil {
+		return fmt.Errorf("sub static: %w", err)
 	}
+	mux = NewHtmlMux(db, staticFiles, tmplProv)
 
 	srv := &http.Server{
 		BaseContext: func(listener net.Listener) context.Context {
 			return ctx
 		},
 		Addr:    cfg.addr,
-		Handler: srvu.WithCompression(mux),
+		Handler: srvu.With(mux, srvu.WithCompression(), srvu.WithLogger(logger)),
 	}
-	go func() {
-		<-ctx.Done()
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		logger.Printf("Shutdown requested, shutting down gracefully")
-		if err := srv.Shutdown(ctx); err != nil {
-			logger.Printf("Shutdown timed out, killing server forcefully")
-			srv.Close()
-		}
-	}()
-	logger.Printf("listening on %s", cfg.addr)
-	if err := srv.ListenAndServe(); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
-		}
-		return err
-	}
-	return nil
+	logger.Printf("starting chore server, listening on %s\n  sqliteDB: %s", cfg.addr, cfg.db)
+	return srvu.RunServerGracefully(ctx, srv, logger)
 }

@@ -1,0 +1,48 @@
+.body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    font-size: 2rem;
+    margin: 0.8rem;
+}
+
+.chore-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 800px;
+}
+
+.chore-element {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    border: solid 2px burlywood;
+    border-radius: 1rem;
+    background-color: azure;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem;
+}
+
+.chore-element .name {
+    flex-grow: 1;
+}
+
+.chore-element .last-completion {
+    display: none;
+}
+
+.chore-element .interval {
+    font-size: 0.8rem;
+    color: grey;
+}

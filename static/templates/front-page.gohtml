@@ -1,0 +1,13 @@
+{{- /*gotype: github.com/SimonSchneider/go-testing/chore.FrontPage*/ -}}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chores</title>
+    <link rel="stylesheet" href="/static/public/styles.css">
+    <script src="/static/public/htmx.min.js"></script>
+    <link rel="icon" href="/static/public/favicon.webp">
+</head>
+<body class="body">
+<h1 class="header">Chores</h1>
+{{ template "chore-list.gohtml" .Chores }}
+</body>

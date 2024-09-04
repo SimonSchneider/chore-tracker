@@ -1,0 +1,28 @@
+{{- /*gotype: github.com/SimonSchneider/go-testing/chore.Chore*/ -}}
+<li class="chore-element" id="chore-{{.ID}}">
+    <button class="complete" hx-post="/{{.ID}}/complete" hx-target="#chore-list-container" hx-swap="outerHTML">
+        Done
+    </button>
+    <div class="name">
+        {{.Name}}
+    </div>
+    <div class="last-completion">
+        {{ if .LastCompletion.IsZero }}
+            Never done
+        {{ else }}
+            Last done: {{.LastCompletion.Format "2006-01-02"}}
+        {{ end }}
+    </div>
+    <div class="interval">
+        {{.Interval}}
+    </div>
+    <div class="next-completion">
+        {{.DurationToNext.Prettify }}
+    </div>
+    <button class="edit" hx-get="/{{.ID}}/edit" hx-target="#chore-{{.ID}}" hx-swap="outerHTML">
+        Edit
+    </button>
+    <button class="delete" hx-delete="/{{.ID}}" hx-target="#chore-{{.ID}}" hx-swap="delete">
+        Delete
+    </button>
+</li>

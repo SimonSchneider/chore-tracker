@@ -5,48 +5,117 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/SimonSchneider/go-testing/srvu"
+	"io/fs"
 	"net/http"
+	"time"
 )
 
-func HtmlList(db *sql.DB, tmpls TemplateProvider) http.Handler {
+func HandlerIndex(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		chores, err := List(ctx, db)
-		if err != nil {
-			return srvu.Err(http.StatusInternalServerError, err)
-		}
-		tmpl := tmpls.Lookup("list-chores.gohtml")
-		return tmpl.Execute(w, chores)
+		return RenderFrontPage(ctx, w, tmpls, db)
 	})
 }
 
-func HtmlAdd(db *sql.DB, tmpls TemplateProvider) http.Handler {
+func HandlerAdd(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		var inp Input
 		if err := srvu.Decode(r, &inp, false); err != nil {
 			return err
 		}
-		tx, err := db.BeginTx(ctx, nil)
-		if err != nil {
-			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("begin tx: %w", err))
-		}
-		defer tx.Commit()
-		if _, err := Create(ctx, tx, inp); err != nil {
-			tx.Rollback()
+		if _, err := Create(ctx, db, inp); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("creating the chore: %w", err))
 		}
-		tx.Commit()
-		chores, err := List(ctx, db)
-		if err != nil {
-			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("listing chores: %w", err))
-		}
-		tmpl := tmpls.Lookup("list-chores.gohtml")
-		return tmpl.Execute(w, chores)
+		return RenderListView(ctx, w, tmpls, db)
 	})
 }
 
-func NewHtmlMux(db *sql.DB, tmplProvider TemplateProvider) *http.ServeMux {
+func HtmlUpdate(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		fmt.Printf("id: %s\n", id)
+		var inp Input
+		if err := srvu.Decode(r, &inp, false); err != nil {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("decoding input: %w", err))
+		}
+		if err := Update(ctx, db, id, inp); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("updating the chore: %w", err))
+		}
+		return RenderListView(ctx, w, tmpls, db)
+	})
+}
+
+func HandlerDelete(db *sql.DB) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		if err := Delete(ctx, db, id); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("deleting the chore: %w", err))
+		}
+		w.WriteHeader(http.StatusOK)
+		return nil
+	})
+}
+
+func HandlerEdit(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		ch, err := Get(ctx, db, id)
+		if err != nil {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
+		}
+		return tmpls.ExecuteTemplate(w, "chore-element-edit.gohtml", ch)
+	})
+}
+
+type CompletionInput struct {
+	CompletedAt time.Time `json:"completed_at"`
+}
+
+func (c *CompletionInput) FromForm(r *http.Request) (err error) {
+	val := r.FormValue("completed_at")
+	if val == "" {
+		return nil
+	}
+	c.CompletedAt, err = time.Parse(time.RFC3339, val)
+	if err != nil {
+		return fmt.Errorf("illegal completed_at '%s': %w", r.FormValue("completed_at"), err)
+	}
+	return nil
+}
+
+func HtmlComplete(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		var inp CompletionInput
+		if err := srvu.Decode(r, &inp, false); err != nil {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("decoding input: %w", err))
+		}
+		if err := Complete(ctx, db, id, inp.CompletedAt); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("completing the chore: %w", err))
+		}
+		return RenderListView(ctx, w, tmpls, db)
+	})
+}
+
+func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider srvu.TemplateProvider) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /", HtmlList(db, tmplProvider))
-	mux.Handle("POST /{$}", HtmlAdd(db, tmplProvider))
+	mux.Handle("GET /static/public/", http.StripPrefix("/static/public/", http.FileServerFS(staticFiles)))
+	mux.Handle("GET /{$}", HandlerIndex(db, tmplProvider))
+	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))
+	mux.Handle("POST /{$}", HandlerAdd(db, tmplProvider))
+	mux.Handle("POST /{id}/complete", HtmlComplete(db, tmplProvider))
+	mux.Handle("DELETE /{id}", HandlerDelete(db))
+	mux.Handle("PUT /{id}", HtmlUpdate(db, tmplProvider))
 	return mux
 }
