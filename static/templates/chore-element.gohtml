@@ -1,28 +1,21 @@
 {{- /*gotype: github.com/SimonSchneider/go-testing/chore.Chore*/ -}}
-<li class="chore-element" id="chore-{{.ID}}">
-    <button class="complete" hx-post="/{{.ID}}/complete" hx-target="#chore-list-container" hx-swap="outerHTML">
-        Done
+<div role="group" id="chore-{{.ID}}">
+    <button class="icon-button" hx-post="/{{.ID}}/complete"
+            hx-target="#chore-list-container"
+            hx-swap="outerHTML">
+        <img src="/static/public/icons/check.svg" alt="complete">
     </button>
-    <div class="name">
+    <p>
         {{.Name}}
-    </div>
-    <div class="last-completion">
-        {{ if .LastCompletion.IsZero }}
-            Never done
-        {{ else }}
-            Last done: {{.LastCompletion.Format "2006-01-02"}}
-        {{ end }}
-    </div>
-    <div class="interval">
+    </p>
+    <p style="width: 6rem; flex-grow: 0; text-align: right">
         {{.Interval}}
-    </div>
-    <div class="next-completion">
-        {{.DurationToNext.Prettify }}
-    </div>
-    <button class="edit" hx-get="/{{.ID}}/edit" hx-target="#chore-{{.ID}}" hx-swap="outerHTML">
-        Edit
+    </p>
+
+    <button class="icon-button" hx-get="/{{.ID}}/edit" hx-target="#chore-{{.ID}}" hx-swap="outerHTML">
+        <img src="/static/public/icons/pencil.svg" alt="edit"/>
     </button>
-    <button class="delete" hx-delete="/{{.ID}}" hx-target="#chore-{{.ID}}" hx-swap="delete">
-        Delete
+    <button class="icon-button" hx-delete="/{{.ID}}" hx-target="#chore-{{.ID}}" hx-swap="delete">
+        <img src="/static/public/icons/trash.svg" alt="delete">
     </button>
-</li>
+</div>

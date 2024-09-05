@@ -9,10 +9,16 @@ import (
 	"time"
 )
 
+/*
+TODO: use the events table as a log of what happened
+(completed, snoozed) but also write it to the chore table
+to make it easier to query the next completion date.
+use the events to undo etc.
+*/
 func Setup(ctx context.Context, db Execer) error {
 	_, err := db.ExecContext(ctx, `
 PRAGMA foreign_keys = ON;
-CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval INTEGER NOT NULL, last_completion DATETIME);
 CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id TEXT NOT NULL, occurred_at DATETIME NOT NULL, FOREIGN KEY (chore_id) REFERENCES chore(id) ON DELETE CASCADE);
 `)
 	if err != nil {
@@ -38,7 +44,7 @@ func (i *Input) FromForm(r *http.Request) error {
 }
 
 func List(ctx context.Context, db Queryer) ([]Chore, error) {
-	rows, err := db.QueryContext(ctx, "SELECT c.id, c.name, c.interval, e.id, e.occurred_at FROM chore c LEFT OUTER JOIN chore_event e ON c.id = e.chore_id ORDER BY c.id, e.occurred_at DESC")
+	rows, err := db.QueryContext(ctx, "SELECT id, name, interval, clast_completion FROM chore ORDER BY occurred_at DESC, name ASC, id ASC")
 	if err != nil {
 		return nil, fmt.Errorf("querying chores: %w", err)
 	}
@@ -127,6 +133,7 @@ func Delete(ctx context.Context, db Beginner, id string) error {
 }
 
 func Complete(ctx context.Context, db Beginner, id string, occurredAt time.Time) error {
+	// TODO: don't complete if already completed on this day.
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("beginning tx: %w", err)

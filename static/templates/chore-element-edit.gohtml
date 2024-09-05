@@ -1,13 +1,13 @@
 {{- /*gotype: github.com/SimonSchneider/go-testing/chore.Chore*/ -}}
-<li class="chore-element" id="chore-{{.ID}}">
-    <button class="complete" hx-post="/{{.ID}}/complete" hx-target="#chore-list-container" hx-swap="outerHTML">
-        Done
-    </button>
-    <form hx-put="/{{.ID}}" hx-target="#chore-list-container" hx-swap="outerHTML">
-        <input aria-label="chore name" name="name" type="text" value="{{.Name}}"/>
-        <input aria-label="chore interval" name="interval" type="text" value="{{.Interval}}"/>
-        <button type="submit">
-            Save
+<form style="margin: unset" id="chore-{{.ID}}" hx-put="/{{.ID}}" hx-target="#chore-list-container" hx-swap="outerHTML">
+    <fieldset name="chore" role="group">
+        <input aria-label="name" name="name" type="text" value="{{.Name}}"/>
+        <input style="width: 6rem" aria-label="interval" name="interval" type="text" value="{{.Interval}}"/>
+        <button type="reset" class="icon-button" hx-get="/{{.ID}}" hx-target="#chore-{{.ID}}" hx-swap="outerHTML">
+            <img src="/static/public/icons/x.svg" alt="cancel">
         </button>
-    </form>
-</li>
+        <button class="icon-button" type="submit">
+            <img src="/static/public/icons/device-floppy.svg" alt="save">
+        </button>
+    </fieldset>
+</form>

@@ -1,23 +1,34 @@
 {{- /*gotype: github.com/SimonSchneider/go-testing/chore.ListView*/ -}}
-<ul class="chore-list" id="chore-list-container">
+<div id="chore-list-container">
+    <form hx-post="/" hx-swap="outerHTML" hx-target="#chore-list-container">
+        <fieldset role="group">
+            <input aria-label="chore name" type="text" placeholder="name" name="name"/>
+            <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d" name="interval"/>
+            <button type="submit" class="icon-button">
+                <img src="/static/public/icons/plus.svg" alt="complete">
+            </button>
+        </fieldset>
+    </form>
     {{range .Sections}}
-        {{ if .HasChores }}
-            <li>
-                <h3>{{.Title}}</h3>
-                <ul class="chore-list">
-                    {{range .Chores}}
-                        {{template "chore-element.gohtml" .}}
-                    {{end}}
-                </ul>
-            </li>
-        {{ end }}
+        <details {{if .HasChores }}open{{end}}>
+            <summary style="display: flex">
+                <span style="flex-grow: 1">
+                    {{.Title}}
+                </span>
+                <span>
+                    {{ len .Chores }}
+                </span>
+            </summary>
+            {{ if .HasChores }}
+                {{range .Chores}}
+                    {{template "chore-element.gohtml" .}}
+                {{end}}
+            {{ else }}
+                <p>
+                    Nothing to do here
+                </p>
+            {{ end }}
+        </details>
+        <hr/>
     {{end}}
-    <li>
-        <form class="chore-element" hx-post="/" hx-swap="outerHTML" hx-target="#chore-list-container">
-            <div>New Chore</div>
-            <input aria-label="chore name" type="text" name="name"/>
-            <input aria-label="chore interval" type="text" name="interval"/>
-            <button type="submit">Add Chore</button>
-        </form>
-    </li>
-</ul>
+</div>

@@ -61,6 +61,20 @@ func HandlerDelete(db *sql.DB) http.Handler {
 	})
 }
 
+func HanderGet(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		ch, err := Get(ctx, db, id)
+		if err != nil {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
+		}
+		return tmpls.ExecuteTemplate(w, "chore-element.gohtml", ch)
+	})
+}
+
 func HandlerEdit(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
@@ -115,6 +129,7 @@ func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider srvu.TemplateProvide
 	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))
 	mux.Handle("POST /{$}", HandlerAdd(db, tmplProvider))
 	mux.Handle("POST /{id}/complete", HtmlComplete(db, tmplProvider))
+	mux.Handle("GET /{id}", HanderGet(db, tmplProvider))
 	mux.Handle("DELETE /{id}", HandlerDelete(db))
 	mux.Handle("PUT /{id}", HtmlUpdate(db, tmplProvider))
 	return mux
