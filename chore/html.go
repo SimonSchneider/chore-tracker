@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/SimonSchneider/go-testing/date"
 	"github.com/SimonSchneider/go-testing/srvu"
 	"io/fs"
 	"net/http"
-	"time"
 )
 
 func HandlerIndex(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
@@ -85,12 +85,13 @@ func HandlerEdit(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		return tmpls.ExecuteTemplate(w, "chore-element-edit.gohtml", ch)
+		//return tmpls.ExecuteTemplate(w, "chore-element-edit.gohtml", ch)
+		return tmpls.ExecuteTemplate(w, "chore-modal.gohtml", ch)
 	})
 }
 
 type CompletionInput struct {
-	CompletedAt time.Time `json:"completed_at"`
+	CompletedAt date.Date `json:"completed_at"`
 }
 
 func (c *CompletionInput) FromForm(r *http.Request) (err error) {
@@ -98,7 +99,7 @@ func (c *CompletionInput) FromForm(r *http.Request) (err error) {
 	if val == "" {
 		return nil
 	}
-	c.CompletedAt, err = time.Parse(time.RFC3339, val)
+	c.CompletedAt, err = date.ParseDate(val)
 	if err != nil {
 		return fmt.Errorf("illegal completed_at '%s': %w", r.FormValue("completed_at"), err)
 	}
@@ -122,10 +123,17 @@ func HtmlComplete(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	})
 }
 
+func HandlerNew(tmpls srvu.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		return tmpls.ExecuteTemplate(w, "chore-modal.gohtml", Chore{})
+	})
+}
+
 func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider srvu.TemplateProvider) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/public/", http.StripPrefix("/static/public/", http.FileServerFS(staticFiles)))
 	mux.Handle("GET /{$}", HandlerIndex(db, tmplProvider))
+	mux.Handle("GET /new", HandlerNew(tmplProvider))
 	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))
 	mux.Handle("POST /{$}", HandlerAdd(db, tmplProvider))
 	mux.Handle("POST /{id}/complete", HtmlComplete(db, tmplProvider))

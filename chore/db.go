@@ -3,7 +3,7 @@ package chore
 import (
 	"context"
 	"database/sql"
-	"time"
+	"fmt"
 )
 
 type Execer interface {
@@ -14,50 +14,30 @@ type Queryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
+type RowQueryer interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+}
+
 type Beginner interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
 
-func parseChoreWithEventRows(rows *sql.Rows, onChore func(chore *Chore)) error {
-	var (
-		tmpChore           Chore
-		tmpEventID         *string
-		tmpEventOccurredAt *time.Time
-		chore              Chore
-	)
-	for rows.Next() {
-		if err := rows.Scan(&tmpChore.ID, &tmpChore.Name, &tmpChore.Interval, &tmpEventID, &tmpEventOccurredAt); err != nil {
-			return err
-		}
-		if chore.ID != tmpChore.ID {
-			if chore.ID != "" {
-				onChore(&chore)
-			}
-			chore = tmpChore
-			chore.History = make([]Event, 0)
-		}
-		hist := chore.History
-		lastCompl := chore.LastCompletion
-		if tmpEventID != nil {
-			hist = append(chore.History, Event{
-				ID:         *tmpEventID,
-				OccurredAt: *tmpEventOccurredAt,
-			})
-			lastCompl = maxTime(lastCompl, *tmpEventOccurredAt)
-		}
-		chore = tmpChore
-		chore.History = hist
-		chore.LastCompletion = lastCompl
-	}
-	if chore.ID != "" {
-		onChore(&chore)
+func parseChoreRow(row interface{ Scan(args ...any) error }, chore *Chore) error {
+	if err := row.Scan(&chore.ID, &chore.Name, &chore.Interval, &chore.LastCompletion); err != nil {
+		return fmt.Errorf("scanning chore: %w", err)
 	}
 	return nil
 }
 
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
+func parseChoreRows(rows *sql.Rows) ([]Chore, error) {
+	defer rows.Close()
+	chores := make([]Chore, 0)
+	for rows.Next() {
+		var chore Chore
+		if err := parseChoreRow(rows, &chore); err != nil {
+			return nil, err
+		}
+		chores = append(chores, chore)
 	}
-	return b
+	return chores, nil
 }

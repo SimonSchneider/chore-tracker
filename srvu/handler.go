@@ -25,6 +25,8 @@ func ErrHandler(h Handler) http.Handler {
 		if err := h.ServeHTTP(r.Context(), w, r); err != nil {
 			var serr StatusError
 			if errors.As(err, &serr) {
+				logger := GetLogger(r.Context())
+				logger.Printf("error: %s", serr.Error())
 				http.Error(w, serr.Error(), serr.Code)
 				return
 			}

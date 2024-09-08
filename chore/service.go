@@ -3,10 +3,9 @@ package chore
 import (
 	"context"
 	"fmt"
-	"github.com/SimonSchneider/go-testing/duration"
+	"github.com/SimonSchneider/go-testing/date"
 	"github.com/google/uuid"
 	"net/http"
-	"time"
 )
 
 /*
@@ -18,8 +17,8 @@ use the events to undo etc.
 func Setup(ctx context.Context, db Execer) error {
 	_, err := db.ExecContext(ctx, `
 PRAGMA foreign_keys = ON;
-CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval INTEGER NOT NULL, last_completion DATETIME);
-CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id TEXT NOT NULL, occurred_at DATETIME NOT NULL, FOREIGN KEY (chore_id) REFERENCES chore(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval INTEGER NOT NULL, last_completion INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id TEXT NOT NULL, occurred_at INTEGER NOT NULL, FOREIGN KEY (chore_id) REFERENCES chore(id) ON DELETE CASCADE);
 `)
 	if err != nil {
 		return fmt.Errorf("execing setup query: %w", err)
@@ -28,14 +27,14 @@ CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id T
 }
 
 type Input struct {
-	Name     string            `json:"name"`
-	Interval duration.Duration `json:"interval"`
+	Name     string        `json:"name"`
+	Interval date.Duration `json:"interval"`
 }
 
 func (i *Input) FromForm(r *http.Request) error {
 	i.Name = r.FormValue("name")
 	interVal := r.FormValue("interval")
-	inter, err := duration.ParseDuration(interVal)
+	inter, err := date.ParseDuration(interVal)
 	if err != nil {
 		return fmt.Errorf("illegal interval '%s': %w", interVal, err)
 	}
@@ -44,36 +43,20 @@ func (i *Input) FromForm(r *http.Request) error {
 }
 
 func List(ctx context.Context, db Queryer) ([]Chore, error) {
-	rows, err := db.QueryContext(ctx, "SELECT id, name, interval, clast_completion FROM chore ORDER BY occurred_at DESC, name ASC, id ASC")
+	rows, err := db.QueryContext(ctx, "SELECT id, name, interval, last_completion FROM chore ORDER BY last_completion DESC, name ASC, id ASC")
 	if err != nil {
 		return nil, fmt.Errorf("querying chores: %w", err)
 	}
-	defer rows.Close()
-	chores := make([]Chore, 0)
-	if err := parseChoreWithEventRows(rows, func(chore *Chore) {
-		chores = append(chores, *chore)
-	}); err != nil {
-		return nil, err
-	}
-	return chores, nil
+	return parseChoreRows(rows)
 }
 
-func Get(ctx context.Context, db Queryer, id string) (*Chore, error) {
-	rows, err := db.QueryContext(ctx, "SELECT c.id, c.name, c.interval, e.id, e.occurred_at FROM chore c LEFT OUTER JOIN chore_event e ON c.id = e.chore_id WHERE c.id = $1 ORDER BY e.occurred_at DESC", id)
-	if err != nil {
-		return nil, fmt.Errorf("finding chore %s: %w", id, err)
+func Get(ctx context.Context, db RowQueryer, id string) (*Chore, error) {
+	row := db.QueryRowContext(ctx, "SELECT id, name, interval, last_completion FROM chore WHERE id = ?", id)
+	var chore Chore
+	if err := parseChoreRow(row, &chore); err != nil {
+		return nil, fmt.Errorf("querying chore %s: %w", id, err)
 	}
-	defer rows.Close()
-	var chore *Chore
-	if err := parseChoreWithEventRows(rows, func(newChore *Chore) {
-		if chore != nil {
-			err = fmt.Errorf("unexpected number of chores found")
-		}
-		chore = newChore
-	}); err != nil {
-		return nil, fmt.Errorf("parsing rows for chore %s: %w", id, err)
-	}
-	return chore, nil
+	return &chore, nil
 }
 
 func Create(ctx context.Context, db Beginner, input Input) (*Chore, error) {
@@ -132,7 +115,7 @@ func Delete(ctx context.Context, db Beginner, id string) error {
 	return nil
 }
 
-func Complete(ctx context.Context, db Beginner, id string, occurredAt time.Time) error {
+func Complete(ctx context.Context, db Beginner, id string, occurredAt date.Date) error {
 	// TODO: don't complete if already completed on this day.
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -140,7 +123,7 @@ func Complete(ctx context.Context, db Beginner, id string, occurredAt time.Time)
 	}
 	defer tx.Commit()
 	if occurredAt.IsZero() {
-		occurredAt = time.Now()
+		occurredAt = date.Today()
 	}
 	event := Event{
 		ID:         uuid.NewString(),
@@ -150,18 +133,9 @@ func Complete(ctx context.Context, db Beginner, id string, occurredAt time.Time)
 		tx.Rollback()
 		return fmt.Errorf("inserting new event: %w", err)
 	}
-	return nil
-}
-
-func DeleteCompletion(ctx context.Context, db Beginner, choreId, eventId string) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("beginning tx: %w", err)
-	}
-	defer tx.Commit()
-	if _, err := tx.ExecContext(ctx, "DELETE FROM chore_event WHERE chore_id = ? AND id = ?", choreId, eventId); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE chore SET last_completion = ? WHERE id = ?", event.OccurredAt, id); err != nil {
 		tx.Rollback()
-		return fmt.Errorf("deleting completion: %w", err)
+		return fmt.Errorf("updating last completion: %w", err)
 	}
 	return nil
 }

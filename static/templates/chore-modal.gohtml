@@ -1,0 +1,50 @@
+{{- /*gotype: github.com/SimonSchneider/go-testing/chore.Chore*/ -}}
+<dialog id="modal" _="
+on closeModal add .closing then wait for animationend then remove me
+on keyup[key is 'Escape'] trigger closeModal
+" open>
+    <div class="modal-underlay" _="on click trigger closeModal"></div>
+    <article>
+        <form hx-post="/" hx-swap="outerHTML" hx-target="#chore-list-container"
+              _="on htmx:afterRequest trigger closeModal">
+            <header class="modal-header">
+                {{if .ID}}
+                    <h2>Edit Chore</h2>
+                {{else}}
+                    <h2>Create Chore</h2>
+                {{end}}
+                <fieldset role="group">
+                    {{if .ID}}
+                        <button type="button" class="icon-button" aria-label="Delete" hx-delete="/{{.ID}}"
+                                hx-target="#chore-{{.ID}}" hx-swap="delete">
+                            <img src="/static/public/icons/trash.svg" alt="delete">
+                        </button>
+                    {{end}}
+                    <button type="reset" class="icon-button" aria-label="Close" rel="prev"
+                            _="on click trigger closeModal">
+                        <img src="/static/public/icons/x.svg" alt="close">
+                    </button>
+                </fieldset>
+            </header>
+            <div class="modal-body">
+                <fieldset role="group">
+                    <input autofocus id="new-chore-name-input" aria-label="chore name" type="text"
+                           placeholder="name"
+                           style="flex-grow: 8"
+                           value="{{.Name}}"
+                           name="name"/>
+                    <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d"
+                           value="{{.Interval.String}}" name="interval"/>
+                    {{/*                    TODO move the create/save and trash buttons to the footer, on mobile it looks cramped*/}}
+                    <button type="submit" class="icon-button">
+                        {{if .ID}}
+                            <img src="/static/public/icons/device-floppy.svg" alt="save">
+                        {{else}}
+                            <img src="/static/public/icons/plus.svg" alt="create">
+                        {{end}}
+                    </button>
+                </fieldset>
+            </div>
+        </form>
+    </article>
+</dialog>

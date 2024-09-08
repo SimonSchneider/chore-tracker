@@ -2,7 +2,7 @@ package chore
 
 import (
 	"context"
-	"github.com/SimonSchneider/go-testing/duration"
+	"github.com/SimonSchneider/go-testing/date"
 	"github.com/SimonSchneider/go-testing/srvu"
 	"net/http"
 	"sort"
@@ -22,12 +22,12 @@ func NewListView(chores []Chore) *ListView {
 
 func (v *ListView) Sections() []Section {
 	sections := []Section{
-		{Title: "Overdue", latestCompletion: -1 * duration.Day},
-		{Title: "Today", latestCompletion: duration.Zero},
-		{Title: "Tomorrow", latestCompletion: duration.Day},
-		{Title: "This week", latestCompletion: duration.Week},
-		{Title: "This month", latestCompletion: 1 * duration.Month},
-		{Title: "Later", latestCompletion: duration.Max},
+		{Title: "Overdue", latestCompletion: -1 * date.Day},
+		{Title: "Today", latestCompletion: date.Zero},
+		{Title: "Tomorrow", latestCompletion: date.Day},
+		{Title: "This week", latestCompletion: date.Week},
+		{Title: "This month", latestCompletion: 1 * date.Month},
+		{Title: "Later", latestCompletion: date.Max},
 	}
 	j := 0
 	for i := range sections {
@@ -44,7 +44,7 @@ func (v *ListView) Sections() []Section {
 
 type Section struct {
 	Title            string
-	latestCompletion duration.Duration
+	latestCompletion date.Duration
 	Chores           []Chore
 }
 

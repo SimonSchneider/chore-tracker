@@ -25,11 +25,15 @@ func (w *capturingResponseWriter) WriteHeader(statusCode int) {
 func WithLogger(logger Logger) Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Printf("request: %s %s", r.Method, r.URL)
+			if r.Method != http.MethodHead {
+				logger.Printf("request: %s %s", r.Method, r.URL)
+			}
 			r = r.WithContext(ContextWithLogger(r.Context(), logger))
 			cw := &capturingResponseWriter{ResponseWriter: w}
 			h.ServeHTTP(cw, r)
+			//if r.Method != http.MethodHead {
 			logger.Printf("response: %s %s %d", r.Method, r.URL, cw.status)
+			//}
 		})
 	}
 }

@@ -1,21 +1,12 @@
 {{- /*gotype: github.com/SimonSchneider/go-testing/chore.ListView*/ -}}
-<div id="chore-list-container">
-    <form hx-post="/" hx-swap="outerHTML" hx-target="#chore-list-container">
-        <fieldset role="group">
-            <input aria-label="chore name" type="text" placeholder="name" name="name"/>
-            <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d" name="interval"/>
-            <button type="submit" class="icon-button">
-                <img src="/static/public/icons/plus.svg" alt="complete">
-            </button>
-        </fieldset>
-    </form>
+<div class="container" id="chore-list-container">
     {{range .Sections}}
         <details {{if .HasChores }}open{{end}}>
-            <summary style="display: flex">
-                <span style="flex-grow: 1">
+            <summary>
+                <span>
                     {{.Title}}
                 </span>
-                <span>
+                <span class="secondary-text">
                     {{ len .Chores }}
                 </span>
             </summary>
