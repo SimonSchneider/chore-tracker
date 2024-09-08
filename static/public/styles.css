@@ -42,6 +42,10 @@ ul {
 
 .icon-button {
     padding: 3px;
+}
+
+button {
+    padding: 0.5rem 1rem;
     margin: 0;
     flex-grow: 0;
     display: flex;
@@ -51,17 +55,17 @@ ul {
     border-radius: 0.5rem;
 }
 
-.icon-button[type="reset"] {
+button[type="reset"] {
     background-color: var(--color-secondary);
 }
 
-.icon-button:hover, .icon-button:focus {
+button:hover, button:focus {
     background-color: var(--color-highlight);
     outline: none;
     cursor: pointer;
 }
 
-.icon-button:active {
+button:active {
     background-color: var(--color-bold);
 }
 
@@ -268,9 +272,12 @@ article {
 .modal-header, .modal-footer {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     margin: 0;
-    padding: 0;
+    padding: 0.5rem 0 0;
+}
+
+.modal-footer:has(> :only-child) {
+    justify-content: flex-end;
 }
 
 :focus {
