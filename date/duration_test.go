@@ -54,3 +54,25 @@ func TestInvalidStringParsing(t *testing.T) {
 		})
 	}
 }
+
+func TestDurationToNext(t *testing.T) {
+	tests := []string{
+		"1d",
+		"1w",
+		"1m",
+		"1d1w",
+	}
+	today := Today()
+	for _, test := range tests {
+		t.Run(test, func(t *testing.T) {
+			d, err := ParseDuration(test)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			after := today.Add(d).Sub(today)
+			if after != d {
+				t.Fatalf("expected %v, got %v", d, after)
+			}
+		})
+	}
+}

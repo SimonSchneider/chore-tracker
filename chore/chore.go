@@ -23,7 +23,7 @@ func (c *Chore) DurationToNext() date.Duration {
 	if c.LastCompletion.IsZero() {
 		return date.Zero
 	}
-	return c.Interval - c.LastCompletion.Sub(date.Today())
+	return c.NextCompletion().Sub(date.Today())
 }
 
 type Event struct {
