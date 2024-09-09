@@ -103,8 +103,13 @@ button:active {
 details summary {
     display: flex;
     cursor: pointer;
-    padding: 5px;
     margin: 0;
+    padding: 0.5rem 0.5rem;
+}
+
+details .details-empty {
+    margin: 0;
+    padding: 1rem 2rem;
 }
 
 details summary :first-child {
@@ -281,7 +286,7 @@ article {
 }
 
 :focus {
-    outline: 1px solid var(--color-bold);
+    /*outline: 1px solid var(--color-bold);*/
 }
 
 .modal-header > h2 {
