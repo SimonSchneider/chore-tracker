@@ -50,7 +50,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	if err != nil {
 		return err
 	}
-	logger := log.New(stdout, "", log.LstdFlags)
+	logger := srvu.LogToOutput(log.New(stdout, "", log.LstdFlags|log.Lshortfile))
 
 	db, err := sql.Open("sqlite3", cfg.db)
 	if err != nil {

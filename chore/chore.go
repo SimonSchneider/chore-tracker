@@ -9,14 +9,15 @@ type Chore struct {
 	Name           string        `json:"name,omitempty"`
 	Interval       date.Duration `json:"interval,omitempty"`
 	LastCompletion date.Date     `json:"last_completion,omitempty"`
+	SnoozedFor     date.Duration `json:"znoozed_for,omitempty"`
 	History        []Event       `json:"history,omitempty"`
 }
 
 func (c *Chore) NextCompletion() date.Date {
 	if c.LastCompletion.IsZero() {
-		return date.Today()
+		return date.Today().Add(c.SnoozedFor)
 	}
-	return c.LastCompletion.Add(c.Interval)
+	return c.LastCompletion.Add(c.Interval + c.SnoozedFor)
 }
 
 func (c *Chore) DurationToNext() date.Duration {

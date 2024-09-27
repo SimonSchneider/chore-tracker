@@ -1,10 +1,17 @@
 {{- /*gotype: github.com/SimonSchneider/go-testing/chore.Chore*/ -}}
 <div class="chore-container" id="chore-{{.ID}}">
-    <button class="icon-button" hx-post="/{{.ID}}/complete"
-            hx-target="#chore-list-container"
-            hx-swap="outerHTML">
-        <img src="/static/public/icons/check.svg" alt="complete">
-    </button>
+    <div class="group">
+        <button class="icon-button" hx-post="/{{.ID}}/complete"
+                hx-target="#chore-list-container"
+                hx-swap="outerHTML">
+            <img src="/static/public/icons/check.svg" alt="complete">
+        </button>
+        <button class="icon-button" hx-post="/{{.ID}}/snooze"
+                hx-target="#chore-list-container"
+                hx-swap="outerHTML">
+            <img src="/static/public/icons/zzz.svg" alt="delete">
+        </button>
+    </div>
     <p class="name">
         {{.Name}}
     </p>

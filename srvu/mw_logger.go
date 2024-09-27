@@ -2,6 +2,7 @@ package srvu
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -38,8 +39,29 @@ func WithLogger(logger Logger) Middleware {
 	}
 }
 
+type Outputer interface {
+	Output(calldepth int, s string) error
+}
+
+func LogToOutput(std Outputer) Logger {
+	return LoggerFunc(func(s string, a ...any) {
+		std.Output(3, fmt.Sprintf(s, a...))
+	})
+}
+
 type Logger interface {
 	Printf(string, ...any)
+}
+
+type LoggerFunc func(string, ...any)
+
+func (f LoggerFunc) Printf(format string, args ...any) {
+
+	f(format, args...)
+}
+
+func NewLoggerFunc(f func(string, ...any)) Logger {
+	return LoggerFunc(f)
 }
 
 type nilLogger struct{}

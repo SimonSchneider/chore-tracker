@@ -95,7 +95,7 @@ func setup(ctx context.Context) (*http.ServeMux, error) {
 	if err := chore.Setup(ctx, db); err != nil {
 		return nil, fmt.Errorf("setup db: %w", err)
 	}
-	return chore.NewMux(db), nil
+	panic("not implemented")
 }
 
 func createBody(name string, interval string) *chore.Input {

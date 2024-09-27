@@ -23,7 +23,7 @@ type Beginner interface {
 }
 
 func parseChoreRow(row interface{ Scan(args ...any) error }, chore *Chore) error {
-	if err := row.Scan(&chore.ID, &chore.Name, &chore.Interval, &chore.LastCompletion); err != nil {
+	if err := row.Scan(&chore.ID, &chore.Name, &chore.Interval, &chore.LastCompletion, &chore.SnoozedFor); err != nil {
 		return fmt.Errorf("scanning chore: %w", err)
 	}
 	return nil

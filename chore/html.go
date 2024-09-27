@@ -123,6 +123,19 @@ func HtmlComplete(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	})
 }
 
+func HtmlSnooze(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		if err := Snooze(ctx, db, id, 1*date.Day); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
+		}
+		return RenderListView(ctx, w, tmpls, db)
+	})
+}
+
 func HandlerNew(tmpls srvu.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return tmpls.ExecuteTemplate(w, "chore-modal.gohtml", Chore{})
@@ -137,6 +150,7 @@ func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider srvu.TemplateProvide
 	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))
 	mux.Handle("POST /{$}", HandlerAdd(db, tmplProvider))
 	mux.Handle("POST /{id}/complete", HtmlComplete(db, tmplProvider))
+	mux.Handle("POST /{id}/snooze", HtmlSnooze(db, tmplProvider))
 	mux.Handle("GET /{id}", HanderGet(db, tmplProvider))
 	mux.Handle("DELETE /{id}", HandlerDelete(db))
 	mux.Handle("PUT /{id}", HtmlUpdate(db, tmplProvider))

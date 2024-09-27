@@ -10,30 +10,30 @@ import (
 )
 
 type ListView struct {
-	chores []Chore
+	Chores []Chore
 }
 
 func NewListView(chores []Chore) *ListView {
 	sort.Slice(chores, func(i, j int) bool {
 		return chores[i].NextCompletion().Before(chores[j].NextCompletion())
 	})
-	return &ListView{chores: chores}
+	return &ListView{Chores: chores}
 }
 
 func (v *ListView) Sections() []Section {
 	sections := []Section{
-		{Title: "Overdue", latestCompletion: -1 * date.Day},
-		{Title: "Today", latestCompletion: date.Zero},
-		{Title: "Tomorrow", latestCompletion: date.Day},
-		{Title: "This week", latestCompletion: date.Week},
-		{Title: "This month", latestCompletion: 1 * date.Month},
-		{Title: "Later", latestCompletion: date.Max},
+		{Title: "Overdue", LatestCompletion: -1 * date.Day},
+		{Title: "Today", LatestCompletion: date.Zero},
+		{Title: "Tomorrow", LatestCompletion: date.Day},
+		{Title: "This week", LatestCompletion: date.Week},
+		{Title: "This month", LatestCompletion: 1 * date.Month},
+		{Title: "Later", LatestCompletion: date.Max},
 	}
 	j := 0
 	for i := range sections {
-		for ; j < len(v.chores); j++ {
-			if v.chores[j].DurationToNext() <= sections[i].latestCompletion {
-				sections[i].Chores = append(sections[i].Chores, v.chores[j])
+		for ; j < len(v.Chores); j++ {
+			if v.Chores[j].DurationToNext() <= sections[i].LatestCompletion {
+				sections[i].Chores = append(sections[i].Chores, v.Chores[j])
 			} else {
 				break
 			}
@@ -44,7 +44,7 @@ func (v *ListView) Sections() []Section {
 
 type Section struct {
 	Title            string
-	latestCompletion date.Duration
+	LatestCompletion date.Duration
 	Chores           []Chore
 }
 
