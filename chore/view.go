@@ -52,6 +52,10 @@ func (s *Section) HasChores() bool {
 	return len(s.Chores) > 0
 }
 
+func (s *Section) IsOpen() bool {
+	return s.HasChores() && s.LatestCompletion <= date.Week
+}
+
 func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls srvu.TemplateProvider, db Queryer) error {
 	chores, err := List(ctx, db)
 	if err != nil {

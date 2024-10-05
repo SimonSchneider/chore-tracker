@@ -8,6 +8,18 @@ button {
     all: unset;
 }
 
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .nav {
     margin-bottom: 1rem;
     padding: 10px;
@@ -157,12 +169,11 @@ hr {
 
 @media (min-width: 1000px) {
     .nav {
-        padding-left: 20%;
-        padding-right: 20%;
+        width: 500px;
     }
 
     .container {
-        max-width: 1000px;
+        width: 500px;
     }
 }
 

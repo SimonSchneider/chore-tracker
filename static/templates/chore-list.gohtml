@@ -1,7 +1,7 @@
 {{- /*gotype: github.com/SimonSchneider/go-testing/chore.ListView*/ -}}
 <div class="container" id="chore-list-container">
     {{range .Sections}}
-        <details {{if .HasChores }}open{{end}}>
+        <details {{if .IsOpen }}open{{end}}>
             <summary>
                 <span>
                     {{.Title}}
