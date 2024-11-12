@@ -1,0 +1,9 @@
+*
+
+!chore
+!cmd
+!date
+!srvu
+!static
+!*.go
+!go.*

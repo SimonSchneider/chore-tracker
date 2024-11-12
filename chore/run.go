@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	chore_tracker "github.com/SimonSchneider/go-testing"
 	"github.com/SimonSchneider/go-testing/srvu"
 	"io"
 	"io/fs"
@@ -39,8 +40,11 @@ func getFS(watch bool) fs.FS {
 			return os.DirFS("static")
 		}
 	}
-	// TODO: grab from embeddedFS
-	return os.DirFS("static")
+	f, err := fs.Sub(chore_tracker.StaticEmbeddedFS, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return f
 }
 
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, getEnv func(string) string, getwd func() (string, error)) error {

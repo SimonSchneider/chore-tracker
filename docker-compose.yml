@@ -1,0 +1,7 @@
+services:
+  chore-tracker:
+    image: ghcr.io/simonschneider/chore-tracker:main
+    volumes:
+      - ./tmp-db:/db
+    ports:
+      - "8888:80"
