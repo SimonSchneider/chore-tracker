@@ -4,19 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/SimonSchneider/go-testing/date"
-	"github.com/SimonSchneider/go-testing/srvu"
+	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/srvu"
+	"github.com/SimonSchneider/goslu/templ"
 	"io/fs"
 	"net/http"
 )
 
-func HandlerIndex(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HandlerIndex(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return RenderFrontPage(ctx, w, tmpls, db)
 	})
 }
 
-func HandlerAdd(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HandlerAdd(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		var inp Input
 		if err := srvu.Decode(r, &inp, false); err != nil {
@@ -29,7 +30,7 @@ func HandlerAdd(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	})
 }
 
-func HtmlUpdate(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HtmlUpdate(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -61,7 +62,7 @@ func HandlerDelete(db *sql.DB) http.Handler {
 	})
 }
 
-func HanderGet(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HanderGet(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -75,7 +76,7 @@ func HanderGet(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	})
 }
 
-func HandlerEdit(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HandlerEdit(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -106,7 +107,7 @@ func (c *CompletionInput) FromForm(r *http.Request) (err error) {
 	return nil
 }
 
-func HtmlComplete(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HtmlComplete(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -123,7 +124,7 @@ func HtmlComplete(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	})
 }
 
-func HtmlSnooze(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
+func HtmlSnooze(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -136,13 +137,13 @@ func HtmlSnooze(db *sql.DB, tmpls srvu.TemplateProvider) http.Handler {
 	})
 }
 
-func HandlerNew(tmpls srvu.TemplateProvider) http.Handler {
+func HandlerNew(tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return tmpls.ExecuteTemplate(w, "chore-modal.gohtml", Chore{})
 	})
 }
 
-func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider srvu.TemplateProvider) *http.ServeMux {
+func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider templ.TemplateProvider) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/public/", http.StripPrefix("/static/public/", http.FileServerFS(staticFiles)))
 	mux.Handle("GET /{$}", HandlerIndex(db, tmplProvider))

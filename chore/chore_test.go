@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/SimonSchneider/go-testing/chore"
-	"github.com/SimonSchneider/go-testing/date"
+	"github.com/SimonSchneider/goslu/date"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func Must[T any](v T, err error) T {

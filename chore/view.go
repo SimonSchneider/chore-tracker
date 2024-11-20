@@ -2,8 +2,9 @@ package chore
 
 import (
 	"context"
-	"github.com/SimonSchneider/go-testing/date"
-	"github.com/SimonSchneider/go-testing/srvu"
+	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/srvu"
+	"github.com/SimonSchneider/goslu/templ"
 	"net/http"
 	"sort"
 	"time"
@@ -56,7 +57,7 @@ func (s *Section) IsOpen() bool {
 	return s.HasChores() && s.LatestCompletion <= date.Week
 }
 
-func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls srvu.TemplateProvider, db Queryer) error {
+func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db Queryer) error {
 	chores, err := List(ctx, db)
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)
@@ -69,7 +70,7 @@ type FrontPage struct {
 	Chores  *ListView
 }
 
-func RenderFrontPage(ctx context.Context, w http.ResponseWriter, tmpls srvu.TemplateProvider, db Queryer) error {
+func RenderFrontPage(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db Queryer) error {
 	chores, err := List(ctx, db)
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)

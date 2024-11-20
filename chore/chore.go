@@ -1,7 +1,7 @@
 package chore
 
 import (
-	"github.com/SimonSchneider/go-testing/date"
+	"github.com/SimonSchneider/goslu/date"
 )
 
 type Chore struct {

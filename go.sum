@@ -1,3 +1,7 @@
+github.com/SimonSchneider/goslu v0.0.0-20241119114313-7950af7abb40 h1:8fx8+S4tQo+kKmS/qoSlU7yZbzp62C3I9TkHSJjICso=
+github.com/SimonSchneider/goslu v0.0.0-20241119114313-7950af7abb40/go.mod h1:4RHIaXGxafAaSNJfcbjdPj8fS7BcJq2TX4nDlyunPw0=
+github.com/SimonSchneider/goslu v0.0.0-20241120200329-d607d859d0ca h1:1/j/JLwMiQ00CwXPYoR3MF6rhr4Yk4U32a0oGKdbpAY=
+github.com/SimonSchneider/goslu v0.0.0-20241120200329-d607d859d0ca/go.mod h1:4RHIaXGxafAaSNJfcbjdPj8fS7BcJq2TX4nDlyunPw0=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/mattn/go-sqlite3 v1.14.23 h1:gbShiuAP1W5j9UOksQ06aiiqPMxYecovVGwmTxWtuw0=

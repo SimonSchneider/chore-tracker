@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/SimonSchneider/go-testing/date"
-	"github.com/SimonSchneider/go-testing/srvu"
+	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/srvu"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func TestSnoozing(t *testing.T) {

@@ -3,29 +3,11 @@ package chore
 import (
 	"context"
 	"fmt"
-	"github.com/SimonSchneider/go-testing/date"
-	"github.com/SimonSchneider/go-testing/srvu"
-	"github.com/google/uuid"
+	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/sid"
+	"github.com/SimonSchneider/goslu/srvu"
 	"net/http"
 )
-
-/*
-TODO: use the events table as a log of what happened
-(completed, snoozed) but also write it to the chore table
-to make it easier to query the next completion date.
-use the events to undo etc.
-*/
-func Setup(ctx context.Context, db Execer) error {
-	_, err := db.ExecContext(ctx, `
-PRAGMA foreign_keys = ON;
-CREATE TABLE IF NOT EXISTS chore (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, interval INTEGER NOT NULL, last_completion INTEGER NOT NULL DEFAULT 0, snoozed_for INTEGER NOT NULL DEFAULT 0);
-CREATE TABLE IF NOT EXISTS chore_event (id TEXT NOT NULL PRIMARY KEY, chore_id TEXT NOT NULL, occurred_at INTEGER NOT NULL, FOREIGN KEY (chore_id) REFERENCES chore(id) ON DELETE CASCADE);
-`)
-	if err != nil {
-		return fmt.Errorf("execing setup query: %w", err)
-	}
-	return nil
-}
 
 type Input struct {
 	Name     string        `json:"name"`
@@ -73,7 +55,7 @@ func Create(ctx context.Context, db Beginner, input Input) (*Chore, error) {
 	}
 	defer tx.Commit()
 	chore := Chore{
-		ID:       uuid.NewString(),
+		ID:       sid.MustNewString(15),
 		Name:     input.Name,
 		Interval: input.Interval,
 	}
@@ -127,7 +109,7 @@ func Complete(ctx context.Context, db Beginner, id string, occurredAt date.Date)
 		occurredAt = date.Today()
 	}
 	event := Event{
-		ID:         uuid.NewString(),
+		ID:         sid.MustNewString(15),
 		OccurredAt: occurredAt,
 	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO chore_event(id, chore_id, occurred_at) VALUES(?, ?, ?)", event.ID, id, event.OccurredAt); err != nil {
