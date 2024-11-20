@@ -2,9 +2,8 @@ version: "2"
 sql:
   - engine: "sqlite"
     queries: "query.sql"
-    schema: "schema.sql"
+    schema: "../static/migrations"
     gen:
       go:
-        package: "repo"
-        out: "../chore/repo"
-        emit_methods_with_db_argument: true
+        package: "cdb"
+        out: "../internal/cdb"

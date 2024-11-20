@@ -1,6 +1,7 @@
 package chore
 
 import (
+	"github.com/SimonSchneider/go-testing/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
 )
 
@@ -10,7 +11,6 @@ type Chore struct {
 	Interval       date.Duration `json:"interval,omitempty"`
 	LastCompletion date.Date     `json:"last_completion,omitempty"`
 	SnoozedFor     date.Duration `json:"znoozed_for,omitempty"`
-	History        []Event       `json:"history,omitempty"`
 }
 
 func (c *Chore) NextCompletion() date.Date {
@@ -27,7 +27,12 @@ func (c *Chore) DurationToNext() date.Duration {
 	return c.NextCompletion().Sub(date.Today())
 }
 
-type Event struct {
-	ID         string    `json:"id,omitempty"`
-	OccurredAt date.Date `json:"occurred_at,omitempty"`
+func ChoreFromDb(row cdb.Chore) Chore {
+	return Chore{
+		ID:             row.ID,
+		Name:           row.Name,
+		Interval:       date.Duration(row.Interval),
+		LastCompletion: date.Date(row.LastCompletion),
+		SnoozedFor:     date.Duration(row.SnoozedFor),
+	}
 }
