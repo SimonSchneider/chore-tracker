@@ -10,7 +10,6 @@ import (
 	"github.com/SimonSchneider/goslu/migrate"
 	"github.com/SimonSchneider/goslu/srvu"
 	"github.com/SimonSchneider/goslu/templ"
-	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -35,9 +34,8 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 
 	public, tmpls, err := templ.GetPublicAndTemplates(chore_tracker.StaticEmbeddedFS, &templ.Config{
-		Watch:            cfg.Watch,
-		TmplPatterns:     []string{"templates/*.gohtml"},
-		RootTmplProvider: func() *template.Template { return template.New("") },
+		Watch:        cfg.Watch,
+		TmplPatterns: []string{"templates/*.gohtml"},
 	})
 	if err != nil {
 		return fmt.Errorf("sub static: %w", err)

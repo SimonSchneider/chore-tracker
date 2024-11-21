@@ -3,7 +3,7 @@ module github.com/SimonSchneider/chore-tracker
 go 1.23.0
 
 require (
-	github.com/SimonSchneider/goslu v0.1.0
+	github.com/SimonSchneider/goslu v0.1.2
 	github.com/ncruces/go-sqlite3 v0.20.2
 )
 
