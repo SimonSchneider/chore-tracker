@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/SimonSchneider/go-testing/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/sid"
 	"github.com/SimonSchneider/goslu/srvu"

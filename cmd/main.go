@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/SimonSchneider/go-testing/internal/chore"
+	"github.com/SimonSchneider/chore-tracker/internal/chore"
 	"os"
 
 	_ "github.com/ncruces/go-sqlite3/driver"

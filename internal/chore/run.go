@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	chore_tracker "github.com/SimonSchneider/go-testing"
+	chore_tracker "github.com/SimonSchneider/chore-tracker"
 	"github.com/SimonSchneider/goslu/config"
 	"github.com/SimonSchneider/goslu/migrate"
 	"github.com/SimonSchneider/goslu/srvu"

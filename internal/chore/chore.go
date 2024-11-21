@@ -1,7 +1,7 @@
 package chore
 
 import (
-	"github.com/SimonSchneider/go-testing/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
 )
 
