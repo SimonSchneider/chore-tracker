@@ -7,7 +7,6 @@ import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/sid"
-	"github.com/SimonSchneider/goslu/srvu"
 	"net/http"
 )
 
@@ -40,7 +39,11 @@ func List(ctx context.Context, db *sql.DB) ([]Chore, error) {
 }
 
 func Get(ctx context.Context, db cdb.DBTX, id string) (*Chore, error) {
-	row, err := cdb.New(db).GetChore(ctx, id)
+	return get(ctx, cdb.New(db), id)
+}
+
+func get(ctx context.Context, db *cdb.Queries, id string) (*Chore, error) {
+	row, err := db.GetChore(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("querying chore %s: %w", id, err)
 	}
@@ -115,28 +118,36 @@ func Complete(ctx context.Context, db *sql.DB, id string, occurredAt date.Date) 
 	return nil
 }
 
+func Expedite(ctx context.Context, db *sql.DB, id string) error {
+	return changeSnooze(ctx, db, id, 0, func(durToNext date.Duration) bool {
+		return durToNext <= 0
+	})
+}
+
 func Snooze(ctx context.Context, db *sql.DB, id string, snoozeFor date.Duration) error {
+	return changeSnooze(ctx, db, id, snoozeFor, func(durToNext date.Duration) bool {
+		return durToNext > 0
+	})
+}
+
+func changeSnooze(ctx context.Context, db *sql.DB, id string, snoozeFor date.Duration, validateDurToNext func(date.Duration) bool) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("beginning tx: %w", err)
 	}
+	txc := cdb.New(tx)
 	defer tx.Commit()
-	ex, err := Get(ctx, tx, id)
+	ex, err := get(ctx, txc, id)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("getting chore: %w", err)
 	}
 	durToNext := ex.DurationToNext()
-	if durToNext > 0 {
+	if validateDurToNext(durToNext) {
 		tx.Rollback()
 		return fmt.Errorf("can't snooze a chore that is not due: %s", durToNext)
 	}
-	snoozedFor := durToNext + snoozeFor
-	srvu.GetLogger(ctx).Printf("(%s - %s)+%s=%s", ex.NextCompletion(), date.Today(), snoozeFor, snoozedFor)
-	if snoozedFor < 0 {
-		snoozedFor = 0
-	}
-	txc := cdb.New(tx)
+	snoozedFor := snoozeFor + ex.SnoozedFor - durToNext
 	if err := txc.SnoozeChore(ctx, cdb.SnoozeChoreParams{ID: id, SnoozedFor: int64(snoozedFor)}); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("updating snooze duration: %w", err)

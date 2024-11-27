@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	chore_tracker "github.com/SimonSchneider/chore-tracker"
+	choretracker "github.com/SimonSchneider/chore-tracker"
 	"github.com/SimonSchneider/goslu/config"
 	"github.com/SimonSchneider/goslu/migrate"
 	"github.com/SimonSchneider/goslu/srvu"
@@ -28,12 +28,12 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	defer cancel()
 	logger := srvu.LogToOutput(log.New(stdout, "", log.LstdFlags|log.Lshortfile))
 
-	db, err := getMigratedDB(ctx, chore_tracker.StaticEmbeddedFS, "static/migrations", cfg.DbURL)
+	db, err := GetMigratedDB(ctx, choretracker.StaticEmbeddedFS, "static/migrations", cfg.DbURL)
 	if err != nil {
 		return fmt.Errorf("failed to migrate db: %w", err)
 	}
 
-	public, tmpls, err := templ.GetPublicAndTemplates(chore_tracker.StaticEmbeddedFS, &templ.Config{
+	public, tmpls, err := templ.GetPublicAndTemplates(choretracker.StaticEmbeddedFS, &templ.Config{
 		Watch:        cfg.Watch,
 		TmplPatterns: []string{"templates/*.gohtml"},
 	})
@@ -64,7 +64,7 @@ func parseConfig(args []string, getEnv func(string) string) (cfg Config, err err
 	return cfg, err
 }
 
-func getMigratedDB(ctx context.Context, dir fs.FS, path string, conn string) (*sql.DB, error) {
+func GetMigratedDB(ctx context.Context, dir fs.FS, path string, conn string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", conn)
 	if err != nil {
 		return nil, fmt.Errorf("opening db: %w", err)

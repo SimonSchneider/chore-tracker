@@ -7,7 +7,7 @@
             <img src="/static/public/icons/check.svg" alt="complete">
         </button>
         {{ if gt .DurationToNext 0 }}
-            <button class="icon-button" hx-post="/{{.ID}}/prioritize"
+            <button class="icon-button" hx-post="/{{.ID}}/expedite"
                     hx-target="#chore-list-container"
                     hx-swap="outerHTML">
                 <img src="/static/public/icons/arrow-up.svg" alt="delete">

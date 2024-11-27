@@ -86,7 +86,6 @@ func HandlerEdit(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		//return tmpls.ExecuteTemplate(w, "chore-element-edit.gohtml", ch)
 		return tmpls.ExecuteTemplate(w, "chore-modal.gohtml", ch)
 	})
 }
@@ -137,6 +136,19 @@ func HtmlSnooze(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	})
 }
 
+func HtmlExpedite(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		if err := Expedite(ctx, db, id); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
+		}
+		return RenderListView(ctx, w, tmpls, db)
+	})
+}
+
 func HandlerNew(tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return tmpls.ExecuteTemplate(w, "chore-modal.gohtml", Chore{})
@@ -152,6 +164,7 @@ func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider templ.TemplateProvid
 	mux.Handle("POST /{$}", HandlerAdd(db, tmplProvider))
 	mux.Handle("POST /{id}/complete", HtmlComplete(db, tmplProvider))
 	mux.Handle("POST /{id}/snooze", HtmlSnooze(db, tmplProvider))
+	mux.Handle("POST /{id}/expedite", HtmlExpedite(db, tmplProvider))
 	mux.Handle("GET /{id}", HanderGet(db, tmplProvider))
 	mux.Handle("DELETE /{id}", HandlerDelete(db))
 	mux.Handle("PUT /{id}", HtmlUpdate(db, tmplProvider))

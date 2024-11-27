@@ -21,9 +21,6 @@ func (c *Chore) NextCompletion() date.Date {
 }
 
 func (c *Chore) DurationToNext() date.Duration {
-	if c.LastCompletion.IsZero() {
-		return date.Zero
-	}
 	return c.NextCompletion().Sub(date.Today())
 }
 

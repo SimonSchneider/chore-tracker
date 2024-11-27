@@ -1,8 +1,7 @@
 *
 
-!chore
 !cmd
-!date
+!internal
 !static
 !*.go
 !go.*

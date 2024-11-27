@@ -13,4 +13,4 @@ FROM gcr.io/distroless/static-debian11
 COPY --from=build /go/bin/app /
 VOLUME /db
 EXPOSE 80
-ENTRYPOINT ["/app", "-addr", ":80", "-db", "file:/db/chores.sqlite?cache=shared"]
+ENTRYPOINT ["/app", "-addr", ":80", "-dburl", "file:/db/chores.sqlite?cache=shared"]
