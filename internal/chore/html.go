@@ -13,7 +13,7 @@ import (
 
 func HandlerIndex(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return RenderFrontPage(ctx, w, tmpls, db)
+		return RenderFrontPage(ctx, w, tmpls, db, date.Today())
 	})
 }
 
@@ -23,10 +23,10 @@ func HandlerAdd(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 		if err := srvu.Decode(r, &inp, false); err != nil {
 			return err
 		}
-		if _, err := Create(ctx, db, inp); err != nil {
+		if _, err := Create(ctx, db, date.Today(), inp); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("creating the chore: %w", err))
 		}
-		return RenderListView(ctx, w, tmpls, db)
+		return RenderListView(ctx, w, tmpls, db, date.Today())
 	})
 }
 
@@ -44,7 +44,7 @@ func HtmlUpdate(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 		if err := Update(ctx, db, id, inp); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("updating the chore: %w", err))
 		}
-		return RenderListView(ctx, w, tmpls, db)
+		return RenderListView(ctx, w, tmpls, db, date.Today())
 	})
 }
 
@@ -109,6 +109,7 @@ func (c *CompletionInput) FromForm(r *http.Request) (err error) {
 func HtmlComplete(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
+		today := date.Today()
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -119,33 +120,35 @@ func HtmlComplete(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 		if err := Complete(ctx, db, id, inp.CompletedAt); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("completing the chore: %w", err))
 		}
-		return RenderListView(ctx, w, tmpls, db)
+		return RenderListView(ctx, w, tmpls, db, today)
 	})
 }
 
 func HtmlSnooze(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
+		today := date.Today()
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
-		if err := Snooze(ctx, db, id, 1*date.Day); err != nil {
+		if err := Snooze(ctx, db, today, id, 1*date.Day); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
 		}
-		return RenderListView(ctx, w, tmpls, db)
+		return RenderListView(ctx, w, tmpls, db, today)
 	})
 }
 
 func HtmlExpedite(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
+		today := date.Today()
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
-		if err := Expedite(ctx, db, id); err != nil {
+		if err := Expedite(ctx, db, today, id); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
 		}
-		return RenderListView(ctx, w, tmpls, db)
+		return RenderListView(ctx, w, tmpls, db, today)
 	})
 }
 

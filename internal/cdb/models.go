@@ -10,6 +10,7 @@ type Chore struct {
 	Interval       int64
 	LastCompletion int64
 	SnoozedFor     int64
+	CreatedAt      int64
 }
 
 type ChoreEvent struct {

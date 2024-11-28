@@ -28,15 +28,16 @@ func (q *Queries) CompleteChore(ctx context.Context, arg CompleteChoreParams) er
 
 const createChore = `-- name: CreateChore :one
 INSERT INTO chore
-    (id, name, interval, last_completion, snoozed_for)
-VALUES (?, ?, ?, ?, ?)
-RETURNING id, name, interval, last_completion, snoozed_for
+    (id, name, interval, created_at, last_completion, snoozed_for)
+VALUES (?, ?, ?, ?, ?, ?)
+RETURNING id, name, interval, last_completion, snoozed_for, created_at
 `
 
 type CreateChoreParams struct {
 	ID             string
 	Name           string
 	Interval       int64
+	CreatedAt      int64
 	LastCompletion int64
 	SnoozedFor     int64
 }
@@ -46,6 +47,7 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		arg.ID,
 		arg.Name,
 		arg.Interval,
+		arg.CreatedAt,
 		arg.LastCompletion,
 		arg.SnoozedFor,
 	)
@@ -56,6 +58,7 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		&i.Interval,
 		&i.LastCompletion,
 		&i.SnoozedFor,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -89,7 +92,7 @@ func (q *Queries) DeleteChore(ctx context.Context, id string) error {
 }
 
 const getChore = `-- name: GetChore :one
-SELECT id, name, interval, last_completion, snoozed_for
+SELECT id, name, interval, last_completion, snoozed_for, created_at
 FROM chore
 WHERE id = ?
 `
@@ -103,12 +106,13 @@ func (q *Queries) GetChore(ctx context.Context, id string) (Chore, error) {
 		&i.Interval,
 		&i.LastCompletion,
 		&i.SnoozedFor,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listChores = `-- name: ListChores :many
-SELECT id, name, interval, last_completion, snoozed_for
+SELECT id, name, interval, last_completion, snoozed_for, created_at
 FROM chore
 ORDER BY last_completion DESC, name ASC, id ASC
 `
@@ -128,6 +132,7 @@ func (q *Queries) ListChores(ctx context.Context) ([]Chore, error) {
 			&i.Interval,
 			&i.LastCompletion,
 			&i.SnoozedFor,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

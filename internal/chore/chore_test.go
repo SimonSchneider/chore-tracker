@@ -41,7 +41,7 @@ func Setup() (context.Context, *sql.DB, context.CancelFunc) {
 func TestCreateChore(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	chr, err := chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))})
+	chr, err := chore.Create(ctx, db, date.Today(), chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))})
 	if err != nil {
 		t.Fatalf("failed to create chore: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestCreateChore(t *testing.T) {
 func TestGetChore(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	createdChr := Must(chore.Create(ctx, db, date.Today(), chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
 	getChore, err := chore.Get(ctx, db, createdChr.ID)
 	if err != nil {
 		t.Fatalf("failed to get chore: %v", err)
@@ -80,7 +80,7 @@ func TestListViewChores(t *testing.T) {
 	defer cancel()
 	createdChrs := make([]*chore.Chore, 5)
 	for i := 0; i < len(createdChrs); i++ {
-		chr := Must(chore.Create(ctx, db, chore.Input{Name: fmt.Sprintf("test%d", i), Interval: Must(date.ParseDuration(fmt.Sprintf("1w%dd", len(createdChrs)-i)))}))
+		chr := Must(chore.Create(ctx, db, date.Today(), chore.Input{Name: fmt.Sprintf("test%d", i), Interval: Must(date.ParseDuration(fmt.Sprintf("1w%dd", len(createdChrs)-i)))}))
 		Panic(chore.Complete(ctx, db, chr.ID, date.Today()))
 		createdChrs[i] = chr
 	}
@@ -88,7 +88,7 @@ func TestListViewChores(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to list chores: %v", err)
 	}
-	view := chore.NewListView(list)
+	view := chore.NewListView(date.Today(), list)
 	for i, chr := range view.Chores {
 		ci := len(createdChrs) - i - 1
 		if chr.ID != createdChrs[ci].ID {
@@ -106,7 +106,7 @@ func TestListViewChores(t *testing.T) {
 func TestCompleteChore(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	createdChr := Must(chore.Create(ctx, db, date.Today(), chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
 	err := chore.Complete(ctx, db, createdChr.ID, date.Today())
 	if err != nil {
 		t.Fatalf("failed to complete chore: %v", err)
@@ -123,8 +123,9 @@ func TestCompleteChore(t *testing.T) {
 func TestSnoozeUncompleted(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
-	err := chore.Snooze(ctx, db, createdChr.ID, 1*date.Day)
+	today := date.Today()
+	createdChr := Must(chore.Create(ctx, db, today, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	err := chore.Snooze(ctx, db, today, createdChr.ID, 1*date.Day)
 	if err != nil {
 		t.Fatalf("failed to snooze chore: %v", err)
 	}
@@ -135,21 +136,29 @@ func TestSnoozeUncompleted(t *testing.T) {
 	if chr.NextCompletion() != date.Today().Add(1*date.Day) {
 		t.Fatalf("next completion is not 1 day from today")
 	}
-	if chr.DurationToNext() != 1*date.Day {
+	if chr.DurationToNextFrom(today) != 1*date.Day {
 		t.Fatalf("duration to next is not 1 day")
+	}
+	tomorrow := today.Add(1 * date.Day)
+	if chr.NextCompletion() != tomorrow {
+		t.Fatalf("next completion is not 0 day from tomorrow(%s): %s", tomorrow, chr.NextCompletion())
+	}
+	if chr.DurationToNextFrom(tomorrow) != 0 {
+		t.Fatalf("duration to next is not 0: %s", chr.DurationToNextFrom(tomorrow))
 	}
 }
 
 func TestSnoozeCompleted(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	today := date.Today()
+	createdChr := Must(chore.Create(ctx, db, today, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
 	Panic(chore.Complete(ctx, db, createdChr.ID, date.Today().Add(-1*date.Week-1*date.Day)))
 	complChr := Must(chore.Get(ctx, db, createdChr.ID))
 	if complChr.NextCompletion() != date.Today().Add(-1*date.Day) {
 		t.Fatalf("last completion is not 1 week and 1 day ago")
 	}
-	err := chore.Snooze(ctx, db, createdChr.ID, 1*date.Day)
+	err := chore.Snooze(ctx, db, today, createdChr.ID, 1*date.Day)
 	if err != nil {
 		t.Fatalf("failed to snooze chore: %v", err)
 	}
@@ -160,17 +169,25 @@ func TestSnoozeCompleted(t *testing.T) {
 	if chr.NextCompletion() != date.Today().Add(1*date.Day) {
 		t.Fatalf("next completion is not 1 day from today")
 	}
-	if chr.DurationToNext() != 1*date.Day {
+	if chr.DurationToNextFrom(today) != 1*date.Day {
 		t.Fatalf("duration to next is not 1 day")
+	}
+	tomorrow := today.Add(1 * date.Day)
+	if chr.NextCompletion() != tomorrow {
+		t.Fatalf("next completion is not 0 day from tomorrow(%s): %s", tomorrow, chr.NextCompletion())
+	}
+	if chr.DurationToNextFrom(tomorrow) != 0 {
+		t.Fatalf("duration to next is not 0: %s", chr.DurationToNextFrom(tomorrow))
 	}
 }
 
 func TestSnoozingANotYetDueChore(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	today := date.Today()
+	createdChr := Must(chore.Create(ctx, db, today, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
 	Panic(chore.Complete(ctx, db, createdChr.ID, date.Today()))
-	err := chore.Snooze(ctx, db, createdChr.ID, 1*date.Day)
+	err := chore.Snooze(ctx, db, today, createdChr.ID, 1*date.Day)
 	if err == nil {
 		t.Fatalf("snoozing a not yet due chore should fail")
 	}
@@ -179,11 +196,12 @@ func TestSnoozingANotYetDueChore(t *testing.T) {
 func TestExpediteChore(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
-	Panic(chore.Complete(ctx, db, createdChr.ID, date.Today()))
-	Panic(chore.Expedite(ctx, db, createdChr.ID))
+	today := date.Today()
+	createdChr := Must(chore.Create(ctx, db, today, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	Panic(chore.Complete(ctx, db, createdChr.ID, today))
+	Panic(chore.Expedite(ctx, db, today, createdChr.ID))
 	chr := Must(chore.Get(ctx, db, createdChr.ID))
-	if chr.NextCompletion() != date.Today() {
+	if chr.NextCompletion() != today {
 		t.Fatalf("next completion is not today: %s", chr.NextCompletion())
 	}
 }
@@ -191,11 +209,12 @@ func TestExpediteChore(t *testing.T) {
 func TestSnoozeAndExpedite(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
-	createdChr := Must(chore.Create(ctx, db, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
-	Panic(chore.Snooze(ctx, db, createdChr.ID, 1*date.Day))
-	Panic(chore.Expedite(ctx, db, createdChr.ID))
+	today := date.Today()
+	createdChr := Must(chore.Create(ctx, db, today, chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))}))
+	Panic(chore.Snooze(ctx, db, today, createdChr.ID, 1*date.Day))
+	Panic(chore.Expedite(ctx, db, today, createdChr.ID))
 	chr := Must(chore.Get(ctx, db, createdChr.ID))
-	if chr.NextCompletion() != date.Today() {
+	if chr.NextCompletion() != today {
 		t.Fatalf("next completion is not today: %s", chr.NextCompletion())
 	}
 }

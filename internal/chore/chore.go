@@ -8,6 +8,7 @@ import (
 type Chore struct {
 	ID             string        `json:"id,omitempty"`
 	Name           string        `json:"name,omitempty"`
+	CreatedAt      date.Date     `json:"created_at,omitempty"`
 	Interval       date.Duration `json:"interval,omitempty"`
 	LastCompletion date.Date     `json:"last_completion,omitempty"`
 	SnoozedFor     date.Duration `json:"znoozed_for,omitempty"`
@@ -15,9 +16,13 @@ type Chore struct {
 
 func (c *Chore) NextCompletion() date.Date {
 	if c.LastCompletion.IsZero() {
-		return date.Today().Add(c.SnoozedFor)
+		return c.CreatedAt.Add(c.SnoozedFor)
 	}
 	return c.LastCompletion.Add(c.Interval + c.SnoozedFor)
+}
+
+func (c *Chore) DurationToNextFrom(today date.Date) date.Duration {
+	return c.NextCompletion().Sub(today)
 }
 
 func (c *Chore) DurationToNext() date.Duration {
@@ -28,6 +33,7 @@ func ChoreFromDb(row cdb.Chore) Chore {
 	return Chore{
 		ID:             row.ID,
 		Name:           row.Name,
+		CreatedAt:      date.Date(row.CreatedAt),
 		Interval:       date.Duration(row.Interval),
 		LastCompletion: date.Date(row.LastCompletion),
 		SnoozedFor:     date.Duration(row.SnoozedFor),

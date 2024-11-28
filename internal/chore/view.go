@@ -13,13 +13,14 @@ import (
 
 type ListView struct {
 	Chores []Chore
+	Today  date.Date
 }
 
-func NewListView(chores []Chore) *ListView {
+func NewListView(today date.Date, chores []Chore) *ListView {
 	sort.Slice(chores, func(i, j int) bool {
 		return chores[i].NextCompletion().Before(chores[j].NextCompletion())
 	})
-	return &ListView{Chores: chores}
+	return &ListView{Chores: chores, Today: today}
 }
 
 func (v *ListView) Sections() []Section {
@@ -34,7 +35,7 @@ func (v *ListView) Sections() []Section {
 	j := 0
 	for i := range sections {
 		for ; j < len(v.Chores); j++ {
-			if v.Chores[j].DurationToNext() <= sections[i].LatestCompletion {
+			if v.Chores[j].DurationToNextFrom(v.Today) <= sections[i].LatestCompletion {
 				sections[i].Chores = append(sections[i].Chores, v.Chores[j])
 			} else {
 				break
@@ -58,12 +59,12 @@ func (s *Section) IsOpen() bool {
 	return s.HasChores() && s.LatestCompletion <= date.Week
 }
 
-func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db *sql.DB) error {
+func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db *sql.DB, today date.Date) error {
 	chores, err := List(ctx, db)
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)
 	}
-	return tmpls.ExecuteTemplate(w, "chore-list.gohtml", NewListView(chores))
+	return tmpls.ExecuteTemplate(w, "chore-list.gohtml", NewListView(today, chores))
 }
 
 type FrontPage struct {
@@ -71,13 +72,13 @@ type FrontPage struct {
 	Chores  *ListView
 }
 
-func RenderFrontPage(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db *sql.DB) error {
+func RenderFrontPage(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db *sql.DB, today date.Date) error {
 	chores, err := List(ctx, db)
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)
 	}
 	return tmpls.ExecuteTemplate(w, "front-page.gohtml", FrontPage{
 		Weekday: time.Now().Weekday(),
-		Chores:  NewListView(chores),
+		Chores:  NewListView(today, chores),
 	})
 }
