@@ -6,4 +6,6 @@ ALTER TABLE chore
 UPDATE chore
 SET created_at = (SELECT MIN(e.occurred_at)
                   FROM chore_event e
-                  WHERE e.chore_id = chore.id);
+                  WHERE e.chore_id = chore.id)
+WHERE created_at = 0
+  AND (SELECT COUNT(*) FROM chore_event e WHERE e.chore_id = chore.id) > 0;
