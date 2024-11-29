@@ -8,3 +8,4 @@
   "I'm not going to do this today, but I will do it tomorrow")
 - [ ] one off chores (when completed they are shown as completed on the day of completion then hidden, so it's possible
   to uncomplete them)
+  - keep them crossed of during the completion day then remove them
