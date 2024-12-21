@@ -5,8 +5,10 @@ on keyup[key is 'Escape'] trigger closeModal
 " open>
     <div class="modal-underlay" _="on click trigger closeModal"></div>
     <article>
-        <form hx-post="/" hx-swap="outerHTML" hx-target="#chore-list-container"
-              _="on htmx:afterRequest trigger closeModal">
+        <form {{if .ID }} hx-put="/{{.ID}}" {{ else }} hx-post="/" {{ end }}
+                hx-swap="outerHTML"
+                hx-target="#chore-list-container"
+                _="on htmx:afterRequest trigger closeModal">
             <header class="modal-header">
                 {{if .ID}}
                     <h2>Edit Chore</h2>

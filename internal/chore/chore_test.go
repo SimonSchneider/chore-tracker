@@ -56,6 +56,25 @@ func TestCreateChore(t *testing.T) {
 	}
 }
 
+func TestChangeChore(t *testing.T) {
+	ctx, db, cancel := Setup()
+	defer cancel()
+	chr, err := chore.Create(ctx, db, date.Today(), chore.Input{Name: "test", Interval: Must(date.ParseDuration("1w"))})
+	if err != nil {
+		t.Fatalf("failed to create chore: %v", err)
+	}
+	if err := chore.Update(ctx, db, chr.ID, chore.Input{Name: "test", Interval: Must(date.ParseDuration("2w"))}); err != nil {
+		t.Fatalf("failed to update chore: %v", err)
+	}
+	list, err := chore.List(ctx, db)
+	if err != nil {
+		t.Fatalf("failed to list chores: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("list is not 1")
+	}
+}
+
 func TestGetChore(t *testing.T) {
 	ctx, db, cancel := Setup()
 	defer cancel()
