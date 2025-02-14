@@ -7,6 +7,7 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
 )
 
 const completeChore = `-- name: CompleteChore :exec
@@ -28,15 +29,15 @@ func (q *Queries) CompleteChore(ctx context.Context, arg CompleteChoreParams) er
 
 const createChore = `-- name: CreateChore :one
 INSERT INTO chore
-    (id, name, interval, created_at, last_completion, snoozed_for)
-VALUES (?, ?, ?, ?, ?, ?)
-RETURNING id, name, interval, last_completion, snoozed_for, created_at
+    (id, name, interval, date_glob, created_at, last_completion, snoozed_for)
+VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, name, interval, last_completion, snoozed_for, created_at, date_glob
 `
 
 type CreateChoreParams struct {
 	ID             string
 	Name           string
 	Interval       int64
+	DateGlob       sql.NullString
 	CreatedAt      int64
 	LastCompletion int64
 	SnoozedFor     int64
@@ -47,6 +48,7 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		arg.ID,
 		arg.Name,
 		arg.Interval,
+		arg.DateGlob,
 		arg.CreatedAt,
 		arg.LastCompletion,
 		arg.SnoozedFor,
@@ -59,6 +61,7 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		&i.LastCompletion,
 		&i.SnoozedFor,
 		&i.CreatedAt,
+		&i.DateGlob,
 	)
 	return i, err
 }
@@ -92,7 +95,7 @@ func (q *Queries) DeleteChore(ctx context.Context, id string) error {
 }
 
 const getChore = `-- name: GetChore :one
-SELECT id, name, interval, last_completion, snoozed_for, created_at
+SELECT id, name, interval, last_completion, snoozed_for, created_at, date_glob
 FROM chore
 WHERE id = ?
 `
@@ -107,12 +110,13 @@ func (q *Queries) GetChore(ctx context.Context, id string) (Chore, error) {
 		&i.LastCompletion,
 		&i.SnoozedFor,
 		&i.CreatedAt,
+		&i.DateGlob,
 	)
 	return i, err
 }
 
 const listChores = `-- name: ListChores :many
-SELECT id, name, interval, last_completion, snoozed_for, created_at
+SELECT id, name, interval, last_completion, snoozed_for, created_at, date_glob
 FROM chore
 ORDER BY last_completion DESC, name ASC, id ASC
 `
@@ -133,6 +137,7 @@ func (q *Queries) ListChores(ctx context.Context) ([]Chore, error) {
 			&i.LastCompletion,
 			&i.SnoozedFor,
 			&i.CreatedAt,
+			&i.DateGlob,
 		); err != nil {
 			return nil, err
 		}
@@ -166,17 +171,24 @@ func (q *Queries) SnoozeChore(ctx context.Context, arg SnoozeChoreParams) error 
 const updateChore = `-- name: UpdateChore :exec
 UPDATE chore
 SET name     = ?,
-    interval = ?
+    interval = ?,
+    date_glob = ?
 WHERE id = ?
 `
 
 type UpdateChoreParams struct {
 	Name     string
 	Interval int64
+	DateGlob sql.NullString
 	ID       string
 }
 
 func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) error {
-	_, err := q.db.ExecContext(ctx, updateChore, arg.Name, arg.Interval, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateChore,
+		arg.Name,
+		arg.Interval,
+		arg.DateGlob,
+		arg.ID,
+	)
 	return err
 }

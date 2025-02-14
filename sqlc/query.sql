@@ -10,14 +10,14 @@ ORDER BY last_completion DESC, name ASC, id ASC;
 
 -- name: CreateChore :one
 INSERT INTO chore
-    (id, name, interval, created_at, last_completion, snoozed_for)
-VALUES (?, ?, ?, ?, ?, ?)
-RETURNING *;
+    (id, name, interval, date_glob, created_at, last_completion, snoozed_for)
+VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: UpdateChore :exec
 UPDATE chore
 SET name     = ?,
-    interval = ?
+    interval = ?,
+    date_glob = ?
 WHERE id = ?;
 
 -- name: DeleteChore :exec

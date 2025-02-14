@@ -4,6 +4,10 @@
 
 package cdb
 
+import (
+	"database/sql"
+)
+
 type Chore struct {
 	ID             string
 	Name           string
@@ -11,6 +15,7 @@ type Chore struct {
 	LastCompletion int64
 	SnoozedFor     int64
 	CreatedAt      int64
+	DateGlob       sql.NullString
 }
 
 type ChoreEvent struct {
