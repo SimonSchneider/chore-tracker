@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
-	"github.com/SimonSchneider/goslu/sid"
 	"net/http"
 )
 
@@ -59,7 +58,7 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, input Input) (*Cho
 		return nil, fmt.Errorf("chore interval can't be zero")
 	}
 	row, err := cdb.New(db).CreateChore(ctx, cdb.CreateChoreParams{
-		ID:        sid.MustNewString(15),
+		ID:        NewId(),
 		Name:      input.Name,
 		CreatedAt: int64(today),
 		Interval:  int64(input.Interval),
@@ -108,7 +107,7 @@ func Complete(ctx context.Context, db *sql.DB, id string, occurredAt date.Date) 
 	}
 	occAt := int64(occurredAt)
 	txc := cdb.New(tx)
-	if err := txc.CreateChoreEvent(ctx, cdb.CreateChoreEventParams{ID: sid.MustNewString(15), ChoreID: id, OccurredAt: occAt}); err != nil {
+	if err := txc.CreateChoreEvent(ctx, cdb.CreateChoreEventParams{ID: NewId(), ChoreID: id, OccurredAt: occAt}); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("inserting new event: %w", err)
 	}

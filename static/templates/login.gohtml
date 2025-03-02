@@ -1,0 +1,33 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.FrontPage*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark"/>
+    <link rel="stylesheet" href="/static/public/styles.css">
+    <script src="/static/public/htmx.min.js"></script>
+    <link rel="icon" href="/static/public/favicon.webp">
+    <title>Chores</title>
+</head>
+<body>
+<header>
+{{/*    {{ template "nav-header.gohtml" }}*/}}
+</header>
+<main>
+    Hello, please login
+    <form
+            action="/login"
+            method="post"
+    >
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br><br>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"><br><br>
+        <label for="rememberMe">Remember me</label>
+        <input type="checkbox" id="rememberMe" name="rememberMe">
+        <input type="submit" value="Submit">
+    </form>
+</main>
+</body>
+</html>

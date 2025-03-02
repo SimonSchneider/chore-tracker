@@ -1,0 +1,17 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.InviteCreateView*/ -}}
+<div>
+    Create an invite
+    <form method="post">
+        {{ if .ChoreLists }}
+            <label for="choreListID">Chore List</label>
+            <select id="choreListID" name="chore list">
+                {{ range . }}
+                    <option value="{{ .ID }}">{{ .Name }}</option>
+                {{ end }}
+            </select>
+        {{ else }}
+            <div>You have no chore lists, create one before inviting someone else</div>
+        {{ end }}
+        <button type="submit">Create invitation</button>
+    </form>
+</div>

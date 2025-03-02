@@ -1,0 +1,11 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.InviteView*/ -}}
+<div>
+    Share this link with whomever you want to invite.
+
+    <div>
+        {{ .BaseURL }}/invite/{{ .InviteID }}/accept
+    </div>
+    <button onclick="navigator.clipboard.writeText('{{ .BaseURL }}/invite/{{ .InviteID }}/accept')">
+        Copy to clipboard
+    </button>
+</div>

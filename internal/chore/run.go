@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	choretracker "github.com/SimonSchneider/chore-tracker"
+	"github.com/SimonSchneider/chore-tracker/internal/auth"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/config"
 	"github.com/SimonSchneider/goslu/migrate"
 	"github.com/SimonSchneider/goslu/srvu"
@@ -17,6 +19,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
+	"time"
 )
 
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, getEnv func(string) string, getwd func() (string, error)) error {
@@ -40,23 +44,100 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	if err != nil {
 		return fmt.Errorf("sub static: %w", err)
 	}
-	mux := NewHtmlMux(db, public, tmpls)
-
+	authConfig := auth.Config{
+		Provider:                    &AuthProvider{db: db},
+		UnauthorizedRedirect:        "/login",
+		DefaultLogoutRedirect:       "/login",
+		LoginFailedRedirect:         "/login",
+		DefaultLoginSuccessRedirect: "/",
+		ShortLivedCookie: auth.CookieConfig{
+			Name:        "session",
+			Expire:      1 * time.Hour,
+			TokenLength: 32,
+			Store:       auth.NewInMemoryTokenStore(),
+		},
+		LongLivedCookie: auth.CookieConfig{
+			Name:        "remember",
+			Expire:      24 * time.Hour * 30,
+			TokenLength: 102,
+			Store:       &DBTokenStore{DB: db},
+		},
+	}
+	mux := http.NewServeMux()
+	HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
+	HandleNested(mux, "/invite/", InviteMux(db, tmpls, authConfig))
+	mux.Handle("GET /login", authConfig.LoginPage())
+	mux.Handle("POST /login", authConfig.LoginHandler())
+	mux.Handle("POST /logout", authConfig.LogoutHandler())
+	mux.Handle("/", srvu.With(HtmlMux(db, tmpls), authConfig.Middleware(false)))
 	srv := &http.Server{
 		BaseContext: func(listener net.Listener) context.Context {
 			return ctx
-		},
+		},[]]]]]]]]]]]gggggggggggggggggggggggggggggggggggggggggggggggggggggg
 		Addr:    cfg.Addr,
 		Handler: srvu.With(mux, srvu.WithCompression(), srvu.WithLogger(logger)),
 	}
 	logger.Printf("starting chore server, listening on %s\n  sqliteDB: %s", cfg.Addr, cfg.DbURL)
+	if cfg.GenInv {
+		invID, err := GenerateInvite(ctx, db)
+		if err != nil {
+			return fmt.Errorf("failed to generate invite: %w", err)
+		}
+		logger.Printf("created invite: %s", invID)
+	}
 	return srvu.RunServerGracefully(ctx, srv, logger)
 }
 
+func HandleNested(mux *http.ServeMux, pattern string, h http.Handler) {
+	pathStart := strings.Index(pattern, "/")
+	if pathStart == -1 {
+		mux.Handle(pattern, h)
+		return
+	}
+	prefix := pattern[pathStart:]
+	if len(prefix) == 0 || prefix == "/" {
+		mux.Handle(pattern, h)
+		return
+	}
+	if prefix[len(prefix)-1] == '/' {
+		prefix = prefix[:len(prefix)-1]
+	}
+	mux.Handle(pattern, http.StripPrefix(prefix, h))
+}
+
+const systemUserID = "system"
+
+func GenerateInvite(ctx context.Context, db *sql.DB) (string, error) {
+	q := cdb.New(db)
+	systemUser, err := q.GetUser(ctx, systemUserID)
+	if err != nil || systemUser.ID == "" {
+		systemUser, err = cdb.New(db).CreateUser(ctx, cdb.CreateUserParams{
+			ID:        systemUserID,
+			CreatedAt: time.Now().UnixMilli(),
+			UpdatedAt: time.Now().UnixMilli(),
+		})
+		if err != nil {
+			return "", fmt.Errorf("create system user: %w", err)
+		}
+	}
+	inv, err := cdb.New(db).CreateInvite(ctx, cdb.CreateInviteParams{
+		ID:          NewId(),
+		CreatedAt:   time.Now().UnixMilli(),
+		ExpiresAt:   time.Now().Add(5 * time.Hour).UnixMilli(),
+		ChoreListID: sql.NullString{},
+		CreatedBy:   systemUser.ID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("create invite: %w", err)
+	}
+	return inv.ID, nil
+}
+
 type Config struct {
-	Addr  string
-	Watch bool
-	DbURL string
+	Addr   string
+	Watch  bool
+	DbURL  string
+	GenInv bool
 }
 
 func parseConfig(args []string, getEnv func(string) string) (cfg Config, err error) {

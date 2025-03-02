@@ -7,9 +7,7 @@ import (
 	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/srvu"
 	"github.com/SimonSchneider/goslu/templ"
-	"io/fs"
 	"net/http"
-	"time"
 )
 
 func HandlerIndex(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
@@ -159,9 +157,8 @@ func HandlerNew(tmpls templ.TemplateProvider) http.Handler {
 	})
 }
 
-func NewHtmlMux(db *sql.DB, staticFiles fs.FS, tmplProvider templ.TemplateProvider) *http.ServeMux {
+func HtmlMux(db *sql.DB, tmplProvider templ.TemplateProvider) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /static/public/", srvu.WithCacheCtrlHeader(365*24*time.Hour)(http.StripPrefix("/static/public/", http.FileServerFS(staticFiles))))
 	mux.Handle("GET /{$}", HandlerIndex(db, tmplProvider))
 	mux.Handle("GET /new", HandlerNew(tmplProvider))
 	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))
