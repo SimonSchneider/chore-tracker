@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/srvu"
 	"github.com/SimonSchneider/goslu/templ"
 	"net/http"
+	"time"
 )
 
 func HandlerIndex(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
@@ -157,8 +160,69 @@ func HandlerNew(tmpls templ.TemplateProvider) http.Handler {
 	})
 }
 
+func ChoreListPage(db *sql.DB, tmpls templ.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		//choreListId := r.PathValue("choreListID")
+		//if choreListId == "" {
+		//	return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing choreListID"))
+		//}
+		//cl, err := cdb.New(db).GetChoreList(ctx, choreListId)
+		//if err != nil {
+		//	return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore list: %w", err))
+		//}
+		//return tmpls.ExecuteTemplate(w, "chore-list.page.gohtml", cl)
+		return nil
+	})
+}
+
+func ChoreListNewPage(tmpls templ.TemplateProvider) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		return tmpls.ExecuteTemplate(w, "chore-list-new.page.gohtml", nil)
+	})
+}
+
+func ChoreListNewHandler(db *sql.DB) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		userId := auth.MustGetUserID(ctx)
+		name := r.FormValue("name")
+		if name == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing name"))
+		}
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("beginning tx: %w", err))
+		}
+		defer tx.Rollback()
+		q := cdb.New(tx)
+		now := time.Now()
+		cl, err := q.CreateChoreList(ctx, cdb.CreateChoreListParams{
+			ID:        NewId(),
+			Name:      name,
+			CreatedAt: now.UnixMilli(),
+			UpdatedAt: now.UnixMilli(),
+		})
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("creating chore list: %w", err))
+		}
+		if err := q.AddUserToChoreList(ctx, cdb.AddUserToChoreListParams{
+			UserID:      userId,
+			ChoreListID: cl.ID,
+		}); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("adding user to chore list: %w", err))
+		}
+		if err := tx.Commit(); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("committing tx: %w", err))
+		}
+		http.Redirect(w, r, fmt.Sprintf("/chore-list/%s", cl.ID), http.StatusSeeOther)
+		return nil
+	})
+}
+
 func HtmlMux(db *sql.DB, tmplProvider templ.TemplateProvider) *http.ServeMux {
 	mux := http.NewServeMux()
+	mux.Handle("GET /chore-list/new", ChoreListNewPage(tmplProvider))
+	mux.Handle("POST /chore-list/new", ChoreListNewHandler(db))
+	mux.Handle("GET /chore-list/{choreListID}/{$}", ChoreListPage(db, tmplProvider))
 	mux.Handle("GET /{$}", HandlerIndex(db, tmplProvider))
 	mux.Handle("GET /new", HandlerNew(tmplProvider))
 	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))

@@ -1,16 +1,7 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.FrontPage*/ -}}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light dark"/>
-    <link rel="stylesheet" href="/static/public/styles.css">
-    <script src="/static/public/htmx.min.js"></script>
-    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
-    <link rel="icon" href="/static/public/favicon.webp">
-    <title>Chores</title>
-</head>
+{{ template "head.gohtml" "Chores" }}
 <body>
 <header>
     {{ template "nav-header.gohtml" }}

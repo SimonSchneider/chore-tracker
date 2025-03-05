@@ -74,5 +74,7 @@ CREATE TABLE chore_event
     chore_id    TEXT    NOT NULL,
     occurred_at INTEGER NOT NULL,
     event_type  TEXT    NOT NULL,
-    FOREIGN KEY (chore_id) REFERENCES chore (id) ON DELETE CASCADE
+    created_by  TEXT    NOT NULL,
+    FOREIGN KEY (chore_id) REFERENCES chore (id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES user (id) ON DELETE CASCADE
 );

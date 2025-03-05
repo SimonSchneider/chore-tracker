@@ -24,6 +24,7 @@ type ChoreEvent struct {
 	ChoreID    string
 	OccurredAt int64
 	EventType  string
+	CreatedBy  string
 }
 
 type ChoreList struct {

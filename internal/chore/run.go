@@ -6,8 +6,8 @@ import (
 	"flag"
 	"fmt"
 	choretracker "github.com/SimonSchneider/chore-tracker"
-	"github.com/SimonSchneider/chore-tracker/internal/auth"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"github.com/SimonSchneider/goslu/config"
 	"github.com/SimonSchneider/goslu/migrate"
 	"github.com/SimonSchneider/goslu/srvu"
@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 )
 
@@ -45,7 +44,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		return fmt.Errorf("sub static: %w", err)
 	}
 	authConfig := auth.Config{
-		Provider:                    &AuthProvider{db: db},
+		Provider:                    &AuthProvider{db: db, tmpls: tmpls},
 		UnauthorizedRedirect:        "/login",
 		DefaultLogoutRedirect:       "/login",
 		LoginFailedRedirect:         "/login",
@@ -65,15 +64,16 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 	mux := http.NewServeMux()
 	HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
-	HandleNested(mux, "/invite/", InviteMux(db, tmpls, authConfig))
+	HandleNested(mux, "/invite/", auth.InviteHandler(&InviteStore{db: db, tmpls: tmpls}, authConfig))
 	mux.Handle("GET /login", authConfig.LoginPage())
 	mux.Handle("POST /login", authConfig.LoginHandler())
 	mux.Handle("POST /logout", authConfig.LogoutHandler())
+	mux.Handle("GET /settings", srvu.With(SettingsPage(tmpls, db), authConfig.Middleware(false)))
 	mux.Handle("/", srvu.With(HtmlMux(db, tmpls), authConfig.Middleware(false)))
 	srv := &http.Server{
 		BaseContext: func(listener net.Listener) context.Context {
 			return ctx
-		},[]]]]]]]]]]]gggggggggggggggggggggggggggggggggggggggggggggggggggggg
+		},
 		Addr:    cfg.Addr,
 		Handler: srvu.With(mux, srvu.WithCompression(), srvu.WithLogger(logger)),
 	}
@@ -83,26 +83,9 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		if err != nil {
 			return fmt.Errorf("failed to generate invite: %w", err)
 		}
-		logger.Printf("created invite: %s", invID)
+		logger.Printf("created invite: http://localhost%s/invite/%s/accept", cfg.Addr, invID)
 	}
 	return srvu.RunServerGracefully(ctx, srv, logger)
-}
-
-func HandleNested(mux *http.ServeMux, pattern string, h http.Handler) {
-	pathStart := strings.Index(pattern, "/")
-	if pathStart == -1 {
-		mux.Handle(pattern, h)
-		return
-	}
-	prefix := pattern[pathStart:]
-	if len(prefix) == 0 || prefix == "/" {
-		mux.Handle(pattern, h)
-		return
-	}
-	if prefix[len(prefix)-1] == '/' {
-		prefix = prefix[:len(prefix)-1]
-	}
-	mux.Handle(pattern, http.StripPrefix(prefix, h))
 }
 
 const systemUserID = "system"

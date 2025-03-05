@@ -59,7 +59,7 @@ ul {
     padding: 3px;
 }
 
-button {
+button, a.icon-button {
     padding: 0.5rem 1rem;
     margin: 0;
     flex-grow: 0;

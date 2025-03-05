@@ -7,7 +7,6 @@ package cdb
 
 import (
 	"context"
-	"database/sql"
 )
 
 const addUserToChoreList = `-- name: AddUserToChoreList :exec
@@ -24,41 +23,6 @@ type AddUserToChoreListParams struct {
 func (q *Queries) AddUserToChoreList(ctx context.Context, arg AddUserToChoreListParams) error {
 	_, err := q.db.ExecContext(ctx, addUserToChoreList, arg.ChoreListID, arg.UserID)
 	return err
-}
-
-const choreListsForUser = `-- name: ChoreListsForUser :many
-SELECT cl.id, cl.created_at, cl.updated_at, cl.name
-FROM chore_list cl
-         JOIN chore_list_members clm ON cl.id = clm.chore_list_id
-WHERE clm.user_id = ?
-`
-
-func (q *Queries) ChoreListsForUser(ctx context.Context, userID string) ([]ChoreList, error) {
-	rows, err := q.db.QueryContext(ctx, choreListsForUser, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ChoreList
-	for rows.Next() {
-		var i ChoreList
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Name,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const completeChore = `-- name: CompleteChore :exec
@@ -80,8 +44,8 @@ func (q *Queries) CompleteChore(ctx context.Context, arg CompleteChoreParams) er
 
 const createChore = `-- name: CreateChore :one
 INSERT INTO chore
-    (id, name, interval, created_at, last_completion, snoozed_for)
-VALUES (?, ?, ?, ?, ?, ?)
+    (id, name, interval, created_at, last_completion, snoozed_for, chore_list_id, created_by)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
 `
 
@@ -92,6 +56,8 @@ type CreateChoreParams struct {
 	CreatedAt      int64
 	LastCompletion int64
 	SnoozedFor     int64
+	ChoreListID    string
+	CreatedBy      string
 }
 
 func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore, error) {
@@ -102,6 +68,8 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		arg.CreatedAt,
 		arg.LastCompletion,
 		arg.SnoozedFor,
+		arg.ChoreListID,
+		arg.CreatedBy,
 	)
 	var i Chore
 	err := row.Scan(
@@ -119,106 +87,57 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 
 const createChoreEvent = `-- name: CreateChoreEvent :exec
 INSERT INTO chore_event
-    (id, chore_id, occurred_at)
-VALUES (?, ?, ?)
+    (id, chore_id, event_type, created_by, occurred_at)
+VALUES (?, ?, ?, ?, ?)
 `
 
 type CreateChoreEventParams struct {
 	ID         string
 	ChoreID    string
+	EventType  string
+	CreatedBy  string
 	OccurredAt int64
 }
 
 func (q *Queries) CreateChoreEvent(ctx context.Context, arg CreateChoreEventParams) error {
-	_, err := q.db.ExecContext(ctx, createChoreEvent, arg.ID, arg.ChoreID, arg.OccurredAt)
-	return err
-}
-
-const createInvite = `-- name: CreateInvite :one
-INSERT INTO invitation
-    (id, created_at, expires_at, chore_list_id, created_by)
-VALUES (?, ?, ?, ?, ?)
-RETURNING id, created_at, expires_at, chore_list_id, created_by
-`
-
-type CreateInviteParams struct {
-	ID          string
-	CreatedAt   int64
-	ExpiresAt   int64
-	ChoreListID sql.NullString
-	CreatedBy   string
-}
-
-func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (Invitation, error) {
-	row := q.db.QueryRowContext(ctx, createInvite,
+	_, err := q.db.ExecContext(ctx, createChoreEvent,
 		arg.ID,
-		arg.CreatedAt,
-		arg.ExpiresAt,
-		arg.ChoreListID,
+		arg.ChoreID,
+		arg.EventType,
 		arg.CreatedBy,
+		arg.OccurredAt,
 	)
-	var i Invitation
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.ExpiresAt,
-		&i.ChoreListID,
-		&i.CreatedBy,
-	)
-	return i, err
-}
-
-const createPasswordAuth = `-- name: CreatePasswordAuth :exec
-INSERT INTO password_auth
-    (user_id, username, hash)
-VALUES (?, ?, ?)
-`
-
-type CreatePasswordAuthParams struct {
-	UserID   string
-	Username string
-	Hash     string
-}
-
-func (q *Queries) CreatePasswordAuth(ctx context.Context, arg CreatePasswordAuthParams) error {
-	_, err := q.db.ExecContext(ctx, createPasswordAuth, arg.UserID, arg.Username, arg.Hash)
 	return err
 }
 
-const createToken = `-- name: CreateToken :exec
-INSERT INTO tokens
-    (user_id, token, expires_at)
-VALUES (?, ?, ?)
+const createChoreList = `-- name: CreateChoreList :one
+INSERT INTO chore_list
+    (id, name, created_at, updated_at)
+VALUES (?, ?, ?, ?)
+RETURNING id, created_at, updated_at, name
 `
 
-type CreateTokenParams struct {
-	UserID    string
-	Token     string
-	ExpiresAt int64
-}
-
-func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error {
-	_, err := q.db.ExecContext(ctx, createToken, arg.UserID, arg.Token, arg.ExpiresAt)
-	return err
-}
-
-const createUser = `-- name: CreateUser :one
-INSERT INTO user
-    (id, created_at, updated_at)
-VALUES (?, ?, ?)
-RETURNING id, created_at, updated_at
-`
-
-type CreateUserParams struct {
+type CreateChoreListParams struct {
 	ID        string
+	Name      string
 	CreatedAt int64
 	UpdatedAt int64
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.CreatedAt, arg.UpdatedAt)
-	var i User
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+func (q *Queries) CreateChoreList(ctx context.Context, arg CreateChoreListParams) (ChoreList, error) {
+	row := q.db.QueryRowContext(ctx, createChoreList,
+		arg.ID,
+		arg.Name,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var i ChoreList
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+	)
 	return i, err
 }
 
@@ -230,43 +149,6 @@ WHERE id = ?
 
 func (q *Queries) DeleteChore(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, deleteChore, id)
-	return err
-}
-
-const deleteInvite = `-- name: DeleteInvite :one
-DELETE
-FROM invitation
-WHERE id = ?
-  AND expires_at > ?
-RETURNING id, created_at, expires_at, chore_list_id, created_by
-`
-
-type DeleteInviteParams struct {
-	ID        string
-	ExpiresAt int64
-}
-
-func (q *Queries) DeleteInvite(ctx context.Context, arg DeleteInviteParams) (Invitation, error) {
-	row := q.db.QueryRowContext(ctx, deleteInvite, arg.ID, arg.ExpiresAt)
-	var i Invitation
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.ExpiresAt,
-		&i.ChoreListID,
-		&i.CreatedBy,
-	)
-	return i, err
-}
-
-const deleteTokensByUserId = `-- name: DeleteTokensByUserId :exec
-DELETE
-FROM tokens
-WHERE user_id = ?
-`
-
-func (q *Queries) DeleteTokensByUserId(ctx context.Context, userID string) error {
-	_, err := q.db.ExecContext(ctx, deleteTokensByUserId, userID)
 	return err
 }
 
@@ -317,95 +199,45 @@ func (q *Queries) GetChoreListByUser(ctx context.Context, arg GetChoreListByUser
 	return i, err
 }
 
-const getInvite = `-- name: GetInvite :one
-SELECT inv.id, inv.created_at, inv.expires_at, inv.chore_list_id, inv.created_by, cl.name as chore_list_name, pa.username as created_by_name
-FROM invitation inv
-         LEFT JOIN chore_list cl ON inv.chore_list_id = cl.id
-         LEFT JOIN user u on inv.created_by = u.id
-         LEFT JOIN password_auth pa on u.id = pa.user_id
-WHERE inv.id = ?
-  AND inv.expires_at > ?
+const getChoreListsByUser = `-- name: GetChoreListsByUser :many
+SELECT cl.id, cl.created_at, cl.updated_at, cl.name
+FROM chore_list cl
+         JOIN chore_list_members clm ON cl.id = clm.chore_list_id
+WHERE clm.user_id = ?
 `
 
-type GetInviteParams struct {
-	ID        string
-	ExpiresAt int64
-}
-
-type GetInviteRow struct {
-	ID            string
-	CreatedAt     int64
-	ExpiresAt     int64
-	ChoreListID   sql.NullString
-	CreatedBy     string
-	ChoreListName sql.NullString
-	CreatedByName sql.NullString
-}
-
-func (q *Queries) GetInvite(ctx context.Context, arg GetInviteParams) (GetInviteRow, error) {
-	row := q.db.QueryRowContext(ctx, getInvite, arg.ID, arg.ExpiresAt)
-	var i GetInviteRow
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.ExpiresAt,
-		&i.ChoreListID,
-		&i.CreatedBy,
-		&i.ChoreListName,
-		&i.CreatedByName,
-	)
-	return i, err
-}
-
-const getPasswordAuthByUsername = `-- name: GetPasswordAuthByUsername :one
-SELECT user_id, username, hash
-FROM password_auth
-WHERE username = ?
-`
-
-func (q *Queries) GetPasswordAuthByUsername(ctx context.Context, username string) (PasswordAuth, error) {
-	row := q.db.QueryRowContext(ctx, getPasswordAuthByUsername, username)
-	var i PasswordAuth
-	err := row.Scan(&i.UserID, &i.Username, &i.Hash)
-	return i, err
-}
-
-const getToken = `-- name: GetToken :one
-SELECT user_id, token, expires_at
-FROM tokens
-WHERE token = ?
-  AND expires_at > ?
-`
-
-type GetTokenParams struct {
-	Token     string
-	ExpiresAt int64
-}
-
-func (q *Queries) GetToken(ctx context.Context, arg GetTokenParams) (Token, error) {
-	row := q.db.QueryRowContext(ctx, getToken, arg.Token, arg.ExpiresAt)
-	var i Token
-	err := row.Scan(&i.UserID, &i.Token, &i.ExpiresAt)
-	return i, err
-}
-
-const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at
-FROM user
-WHERE id = ?
-`
-
-func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, id)
-	var i User
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
-	return i, err
+func (q *Queries) GetChoreListsByUser(ctx context.Context, userID string) ([]ChoreList, error) {
+	rows, err := q.db.QueryContext(ctx, getChoreListsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChoreList
+	for rows.Next() {
+		var i ChoreList
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listChores = `-- name: ListChores :many
 SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
 FROM chore
-ORDER BY last_completion DESC, name ASC, id ASC
+ORDER BY last_completion DESC, name, id
 `
 
 func (q *Queries) ListChores(ctx context.Context) ([]Chore, error) {

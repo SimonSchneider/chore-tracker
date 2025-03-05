@@ -4,8 +4,8 @@
     <form method="post">
         {{ if .ChoreLists }}
             <label for="choreListID">Chore List</label>
-            <select id="choreListID" name="chore list">
-                {{ range . }}
+            <select id="choreListID" name="choreListID">
+                {{ range .ChoreLists }}
                     <option value="{{ .ID }}">{{ .Name }}</option>
                 {{ end }}
             </select>

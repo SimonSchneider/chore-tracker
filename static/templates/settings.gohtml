@@ -1,0 +1,40 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.SettingsView*/ -}}
+<div>
+    <h1>Settings</h1>
+    <p>UserID: {{.UserID}}</p>
+    <h2>Password Auths</h2>
+    <ul>
+        {{ range .Usernames }}
+            <li>
+                {{ . }}
+            </li>
+        {{ end }}
+    </ul>
+    <h2>Chore Lists</h2>
+    <a href="/chore-list/new">Create chore list</a>
+    <ul>
+        {{ range .ChoreLists }}
+            <li>
+                {{ .Name }}
+            </li>
+        {{ else }}
+            No chore lists created
+        {{ end }}
+    </ul>
+    <h2>Created Invites</h2>
+    <a href="/invite/create">Create invite</a>
+    <ul>
+        {{ range .CreatedInvites }}
+            <li>
+                {{ .ChoreListName.String }}: {{ .ID }}
+            </li>
+        {{ else }}
+            No invites created
+        {{ end }}
+    </ul>
+    <form method="post" action="/logout">
+        <button type="submit" class="icon-button">
+            <img alt="logout" src="/static/public/icons/logout.svg"/>
+        </button>
+    </form>
+</div>
