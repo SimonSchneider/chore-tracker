@@ -223,6 +223,7 @@ func HtmlMux(db *sql.DB, tmplProvider templ.TemplateProvider) *http.ServeMux {
 	mux.Handle("GET /chore-list/new", ChoreListNewPage(tmplProvider))
 	mux.Handle("POST /chore-list/new", ChoreListNewHandler(db))
 	mux.Handle("GET /chore-list/{choreListID}/{$}", ChoreListPage(db, tmplProvider))
+	mux.Handle("GET /chore-list/{$}", ChoreListsPage(db, tmplProvider))
 	mux.Handle("GET /{$}", HandlerIndex(db, tmplProvider))
 	mux.Handle("GET /new", HandlerNew(tmplProvider))
 	mux.Handle("GET /{id}/edit", HandlerEdit(db, tmplProvider))

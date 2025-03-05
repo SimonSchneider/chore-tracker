@@ -1,0 +1,11 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.ChoreListView*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+{{ template "head.gohtml" "Chores Invite" }}
+<body>
+<header>
+    {{ template "chore_lists.nav_header.gohtml" }}
+</header>
+{{ template "chore_lists.gohtml" .}}
+</body>
+</html>

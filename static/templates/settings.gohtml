@@ -15,7 +15,7 @@
     <ul>
         {{ range .ChoreLists }}
             <li>
-                {{ .Name }}
+                <a href="/chore-list/{{ .ID }}">{{ .Name }}</a>
             </li>
         {{ else }}
             No chore lists created
@@ -26,7 +26,10 @@
     <ul>
         {{ range .CreatedInvites }}
             <li>
-                {{ .ChoreListName.String }}: {{ .ID }}
+                <a href="/invite/{{ .ID }}">{{ .ID }}</a>
+                {{ if .ChoreListName.Valid }}
+                    ({{ .ChoreListName.String }})
+                {{ end }}
             </li>
         {{ else }}
             No invites created
