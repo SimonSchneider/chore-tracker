@@ -12,8 +12,8 @@ import (
 )
 
 type AuthProvider struct {
-	db    *sql.DB
-	tmpls *Templates
+	db   *sql.DB
+	view *View
 }
 
 func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (string, error) {
@@ -33,7 +33,7 @@ func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (s
 }
 
 func (a *AuthProvider) RenderLoginPage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return a.tmpls.LoginPage(w)
+	return a.view.LoginPage(w)
 }
 
 type DBTokenStore struct {

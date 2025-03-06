@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func SettingsPage(tmpls *Templates, db *sql.DB) http.Handler {
+func SettingsPage(view *View, db *sql.DB) http.Handler {
 	q := cdb.New(db)
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userId := auth.MustGetUserID(ctx)
@@ -23,7 +23,7 @@ func SettingsPage(tmpls *Templates, db *sql.DB) http.Handler {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
 		invites, err := q.GetInvitationsByCreator(ctx, cdb.GetInvitationsByCreatorParams{CreatedBy: userId, ExpiresAt: time.Now().UnixMilli()})
-		return tmpls.SettingsPage(w, SettingsView{
+		return view.SettingsPage(w, SettingsView{
 			UserID:         userId,
 			Usernames:      usernames,
 			ChoreLists:     choreLists,

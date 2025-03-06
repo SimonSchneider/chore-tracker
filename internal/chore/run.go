@@ -40,12 +40,12 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		Watch:        cfg.Watch,
 		TmplPatterns: []string{"templates/*.gohtml"},
 	})
-	tmpls := &Templates{p: tmplProv}
+	view := &View{p: tmplProv}
 	if err != nil {
 		return fmt.Errorf("sub static: %w", err)
 	}
 	authConfig := auth.Config{
-		Provider:                    &AuthProvider{db: db, tmpls: tmpls},
+		Provider:                    &AuthProvider{db: db, view: view},
 		UnauthorizedRedirect:        "/login",
 		DefaultLogoutRedirect:       "/login",
 		LoginFailedRedirect:         "/login",
@@ -69,11 +69,11 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	mux.Handle("GET /login", authConfig.LoginPage())
 	mux.Handle("POST /login", authConfig.LoginHandler())
 	mux.Handle("POST /logout", authConfig.LogoutHandler())
-	mux.Handle("GET /settings", srvu.With(SettingsPage(tmpls, db), authConfig.Middleware(false)))
+	mux.Handle("GET /settings", srvu.With(SettingsPage(view, db), authConfig.Middleware(false)))
 
-	HandleNested(mux, "/invites/", auth.InviteHandler(&InviteStore{db: db, tmpls: tmpls}, authConfig))
-	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, tmpls), authConfig.Middleware(false)))
-	mux.Handle("/chores/", srvu.With(ChoreMux(db, tmpls), authConfig.Middleware(false)))
+	HandleNested(mux, "/invites/", auth.InviteHandler(&InviteStore{db: db, view: view}, authConfig))
+	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view), authConfig.Middleware(false)))
+	mux.Handle("/chores/", srvu.With(ChoreMux(db, view), authConfig.Middleware(false)))
 	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
 
 	srv := &http.Server{

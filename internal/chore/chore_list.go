@@ -13,9 +13,9 @@ import (
 	"time"
 )
 
-func ChoreListNewPage(tmpls *Templates) http.Handler {
+func ChoreListNewPage(view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return tmpls.ChoreListNewPage(w)
+		return view.ChoreListNewPage(w)
 	})
 }
 
@@ -56,20 +56,20 @@ func ChoreListNewHandler(db *sql.DB) http.Handler {
 	})
 }
 
-func ChoreListsPage(db *sql.DB, tmpls *Templates) http.Handler {
+func ChoreListsPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userID := auth.MustGetUserID(ctx)
 		choreLists, err := cdb.New(db).GetChoreListsByUser(ctx, userID)
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		return tmpls.ChoreListsPage(w, ChoreListsView{
+		return view.ChoreListsPage(w, ChoreListsView{
 			ChoreLists: choreLists,
 		})
 	})
 }
 
-func ChoreListRender(ctx context.Context, db *sql.DB, tmpls *Templates, w io.Writer, r *http.Request, today date.Date, userID, choreListID string) error {
+func ChoreListRender(ctx context.Context, db *sql.DB, view *View, w io.Writer, r *http.Request, today date.Date, userID, choreListID string) error {
 	choreList, err := cdb.New(db).GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{ID: choreListID, UserID: userID})
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)
@@ -78,31 +78,27 @@ func ChoreListRender(ctx context.Context, db *sql.DB, tmpls *Templates, w io.Wri
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)
 	}
-	view := ChoreListView{
+	return view.ChoreListPage(w, r, ChoreListView{
 		List:    choreList,
 		Weekday: time.Now().Weekday(),
 		Chores:  NewListView(today, ChoresFromDb(chores)),
-	}
-	if r.Header.Get("HX-Request") == "true" {
-		return tmpls.ChoreList(w, view)
-	}
-	return tmpls.ChoreListPage(w, view)
-}
-
-func ChoreListPage(db *sql.DB, tmpls *Templates) http.Handler {
-	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		choreListID := r.PathValue("choreListID")
-		userID := auth.MustGetUserID(ctx)
-		return ChoreListRender(ctx, db, tmpls, w, r, date.Today(), userID, choreListID)
 	})
 }
 
-func ChoreListMux(db *sql.DB, tmplProvider *Templates) *http.ServeMux {
+func ChoreListPage(db *sql.DB, view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		choreListID := r.PathValue("choreListID")
+		userID := auth.MustGetUserID(ctx)
+		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, choreListID)
+	})
+}
+
+func ChoreListMux(db *sql.DB, view *View) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /chore-lists/new", ChoreListNewPage(tmplProvider))
+	mux.Handle("GET /chore-lists/new", ChoreListNewPage(view))
 	mux.Handle("POST /chore-lists/new", ChoreListNewHandler(db))
-	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreNewPage(tmplProvider))
-	mux.Handle("GET /chore-lists/{choreListID}/{$}", ChoreListPage(db, tmplProvider))
-	mux.Handle("GET /chore-lists/{$}", ChoreListsPage(db, tmplProvider))
+	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreNewPage(view))
+	mux.Handle("GET /chore-lists/{choreListID}/{$}", ChoreListPage(db, view))
+	mux.Handle("GET /chore-lists/{$}", ChoreListsPage(db, view))
 	return mux
 }

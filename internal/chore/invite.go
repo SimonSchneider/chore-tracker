@@ -13,8 +13,8 @@ import (
 )
 
 type InviteStore struct {
-	db    *sql.DB
-	tmpls *Templates
+	db   *sql.DB
+	view *View
 }
 
 func (s *InviteStore) CreateInvitePage(ctx context.Context, userID string, w http.ResponseWriter, r *http.Request) error {
@@ -22,7 +22,7 @@ func (s *InviteStore) CreateInvitePage(ctx context.Context, userID string, w htt
 	if err != nil {
 		return err
 	}
-	return s.tmpls.InviteCreate(w, InviteCreateView{ChoreLists: choreLists})
+	return s.view.InviteCreate(w, InviteCreateView{ChoreLists: choreLists})
 }
 
 func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.Time, r *http.Request) (string, error) {
@@ -53,12 +53,12 @@ func (s *InviteStore) InvitePage(ctx context.Context, userID string, inviteID st
 	}
 	if invite.CreatedBy == userID {
 
-		return s.tmpls.InvitePage(w, InviteView{
+		return s.view.InvitePage(w, InviteView{
 			InviteID:      invite.ID,
 			ChoreListName: invite.ChoreListName.String,
 		})
 	}
-	return s.tmpls.InviteAcceptPage(w, InviteAcceptView{
+	return s.view.InviteAcceptPage(w, InviteAcceptView{
 		InviteID:      invite.ID,
 		ChoreListName: invite.ChoreListName.String,
 		InviterName:   invite.CreatedByName.String,

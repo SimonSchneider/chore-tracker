@@ -1,67 +1,89 @@
 package chore
 
 import (
-	"context"
-	"database/sql"
-	"github.com/SimonSchneider/goslu/date"
-	"github.com/SimonSchneider/goslu/srvu"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/templ"
+	"io"
 	"net/http"
-	"sort"
+	"time"
 )
 
-type ListView struct {
-	Chores []Chore
-	Today  date.Date
+type View struct {
+	p templ.TemplateProvider
 }
 
-func NewListView(today date.Date, chores []Chore) *ListView {
-	sort.Slice(chores, func(i, j int) bool {
-		return chores[i].NextCompletion().Before(chores[j].NextCompletion())
-	})
-	return &ListView{Chores: chores, Today: today}
+type ChoreListsView struct {
+	ChoreLists []cdb.ChoreList
 }
 
-func (v *ListView) Sections() []Section {
-	sections := []Section{
-		{Title: "Overdue", LatestCompletion: -1 * date.Day},
-		{Title: "Today", LatestCompletion: date.Zero},
-		{Title: "Tomorrow", LatestCompletion: date.Day},
-		{Title: "This week", LatestCompletion: date.Week},
-		{Title: "This month", LatestCompletion: 1 * date.Month},
-		{Title: "Later", LatestCompletion: date.Max},
+func (t *View) ChoreListsPage(w io.Writer, d ChoreListsView) error {
+	return t.p.ExecuteTemplate(w, "chore_lists.page.gohtml", d)
+}
+
+func (t *View) ChoreListNewPage(w io.Writer) error {
+	return t.p.ExecuteTemplate(w, "chore-list-new.page.gohtml", nil)
+}
+
+type ChoreListView struct {
+	List    cdb.ChoreList
+	Weekday time.Weekday
+	Chores  *ListView
+}
+
+func (t *View) ChoreListPage(w io.Writer, r *http.Request, d ChoreListView) error {
+	if r.Header.Get("HX-Request") == "true" {
+		return t.p.ExecuteTemplate(w, "chore_list.gohtml", d)
 	}
-	j := 0
-	for i := range sections {
-		for ; j < len(v.Chores); j++ {
-			if v.Chores[j].DurationToNextFrom(v.Today) <= sections[i].LatestCompletion {
-				sections[i].Chores = append(sections[i].Chores, v.Chores[j])
-			} else {
-				break
-			}
-		}
-	}
-	return sections
+	return t.p.ExecuteTemplate(w, "chore_list.page.gohtml", d)
 }
 
-type Section struct {
-	Title            string
-	LatestCompletion date.Duration
-	Chores           []Chore
+func (t *View) ChoreModal(w io.Writer, d *Chore) error {
+	return t.p.ExecuteTemplate(w, "chore-modal.gohtml", d)
 }
 
-func (s *Section) HasChores() bool {
-	return len(s.Chores) > 0
+type SettingsView struct {
+	UserID         string
+	Usernames      []string
+	ChoreLists     []cdb.ChoreList
+	CreatedInvites []cdb.GetInvitationsByCreatorRow
 }
 
-func (s *Section) IsOpen() bool {
-	return s.HasChores() && s.LatestCompletion <= date.Week
+func (t *View) SettingsPage(w io.Writer, d SettingsView) error {
+	return t.p.ExecuteTemplate(w, "settings.page.gohtml", d)
 }
 
-func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db *sql.DB, today date.Date) error {
-	chores, err := List(ctx, db)
-	if err != nil {
-		return srvu.Err(http.StatusInternalServerError, err)
-	}
-	return tmpls.ExecuteTemplate(w, "chore-list.gohtml", NewListView(today, chores))
+type InviteCreateView struct {
+	ChoreLists []cdb.ChoreList
+}
+
+func (t *View) InviteCreate(w io.Writer, d InviteCreateView) error {
+	return t.p.ExecuteTemplate(w, "invite_create.gohtml", d)
+}
+
+type InviteView struct {
+	InviteID      string
+	ChoreListName string
+}
+
+func (t *View) InvitePage(w io.Writer, d InviteView) error {
+	return t.p.ExecuteTemplate(w, "invite.gohtml", d)
+}
+
+type InviteAcceptView struct {
+	InviteID      string
+	ChoreListName string
+	InviterName   string
+	ExistingUser  bool
+}
+
+func (t *View) InviteAcceptPage(w io.Writer, d InviteAcceptView) error {
+	return t.p.ExecuteTemplate(w, "invite_accept.page.gohtml", d)
+}
+
+func (t *View) ChoreElement(w io.Writer, d *Chore) error {
+	return t.p.ExecuteTemplate(w, "chore-element.gohtml", d)
+}
+
+func (t *View) LoginPage(w io.Writer) error {
+	return t.p.ExecuteTemplate(w, "login.page.gohtml", nil)
 }
