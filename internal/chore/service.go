@@ -10,12 +10,14 @@ import (
 )
 
 type Input struct {
-	Name     string        `json:"name"`
-	Interval date.Duration `json:"interval"`
+	Name        string        `json:"name"`
+	ChoreListID string        `json:"chore_list_id"`
+	Interval    date.Duration `json:"interval"`
 }
 
 func (i *Input) FromForm(r *http.Request) error {
 	i.Name = r.FormValue("name")
+	i.ChoreListID = r.FormValue("choreListID")
 	interVal := r.FormValue("interval")
 	inter, err := date.ParseDuration(interVal)
 	if err != nil {
@@ -25,32 +27,36 @@ func (i *Input) FromForm(r *http.Request) error {
 	return nil
 }
 
+func ChoresFromDb(dbChores []cdb.Chore) []Chore {
+	chores := make([]Chore, len(dbChores))
+	for i, dbChore := range dbChores {
+		chores[i] = ChoreFromDb(dbChore)
+	}
+	return chores
+}
+
 func List(ctx context.Context, db *sql.DB) ([]Chore, error) {
 	dbChores, err := cdb.New(db).ListChores(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("listing chores: %w", err)
 	}
-	chores := make([]Chore, len(dbChores))
-	for i, dbChore := range dbChores {
-		chores[i] = ChoreFromDb(dbChore)
-	}
-	return chores, nil
+	return ChoresFromDb(dbChores), nil
 }
 
-func Get(ctx context.Context, db cdb.DBTX, id string) (*Chore, error) {
-	return get(ctx, cdb.New(db), id)
+func Get(ctx context.Context, db cdb.DBTX, userID, id string) (*Chore, error) {
+	return get(ctx, cdb.New(db), userID, id)
 }
 
-func get(ctx context.Context, db *cdb.Queries, id string) (*Chore, error) {
-	row, err := db.GetChore(ctx, id)
+func get(ctx context.Context, db *cdb.Queries, userID, id string) (*Chore, error) {
+	row, err := db.GetChore(ctx, cdb.GetChoreParams{ID: id, UserID: userID})
 	if err != nil {
-		return nil, fmt.Errorf("querying chore %s: %w", id, err)
+		return nil, fmt.Errorf("querying chore %s for user %s: %w", id, userID, err)
 	}
 	chore := ChoreFromDb(row)
 	return &chore, nil
 }
 
-func Create(ctx context.Context, db *sql.DB, today date.Date, input Input) (*Chore, error) {
+func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, input Input) (*Chore, error) {
 	if input.Name == "" {
 		return nil, fmt.Errorf("illegal empty name for new chore")
 	}
@@ -58,10 +64,12 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, input Input) (*Cho
 		return nil, fmt.Errorf("chore interval can't be zero")
 	}
 	row, err := cdb.New(db).CreateChore(ctx, cdb.CreateChoreParams{
-		ID:        NewId(),
-		Name:      input.Name,
-		CreatedAt: int64(today),
-		Interval:  int64(input.Interval),
+		ID:          NewId(),
+		Name:        input.Name,
+		CreatedAt:   int64(today),
+		ChoreListID: input.ChoreListID,
+		Interval:    int64(input.Interval),
+		CreatedBy:   userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating chore: %w", err)
@@ -118,26 +126,26 @@ func Complete(ctx context.Context, db *sql.DB, id string, occurredAt date.Date) 
 	return nil
 }
 
-func Expedite(ctx context.Context, db *sql.DB, today date.Date, id string) error {
-	return changeSnooze(ctx, db, today, id, 0, func(durToNext date.Duration) bool {
+func Expedite(ctx context.Context, db *sql.DB, today date.Date, userID, id string) error {
+	return changeSnooze(ctx, db, today, userID, id, 0, func(durToNext date.Duration) bool {
 		return durToNext <= 0
 	})
 }
 
-func Snooze(ctx context.Context, db *sql.DB, today date.Date, id string, snoozeFor date.Duration) error {
-	return changeSnooze(ctx, db, today, id, snoozeFor, func(durToNext date.Duration) bool {
+func Snooze(ctx context.Context, db *sql.DB, today date.Date, userID, id string, snoozeFor date.Duration) error {
+	return changeSnooze(ctx, db, today, userID, id, snoozeFor, func(durToNext date.Duration) bool {
 		return durToNext > 0
 	})
 }
 
-func changeSnooze(ctx context.Context, db *sql.DB, today date.Date, id string, snoozeFor date.Duration, validateDurToNext func(date.Duration) bool) error {
+func changeSnooze(ctx context.Context, db *sql.DB, today date.Date, userID, id string, snoozeFor date.Duration, validateDurToNext func(date.Duration) bool) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("beginning tx: %w", err)
 	}
 	txc := cdb.New(tx)
 	defer tx.Commit()
-	ex, err := get(ctx, txc, id)
+	ex, err := get(ctx, txc, userID, id)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("getting chore: %w", err)

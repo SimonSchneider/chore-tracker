@@ -5,7 +5,7 @@ on keyup[key is 'Escape'] trigger closeModal
 " open>
     <div class="modal-underlay" _="on click trigger closeModal"></div>
     <article>
-        <form {{if .ID }} hx-put="/{{.ID}}" {{ else }} hx-post="/" {{ end }}
+        <form {{if .ID }} hx-put="/chores/{{.ID}}" {{ else }} hx-post="/chores/new" {{ end }}
                 hx-swap="outerHTML"
                 hx-target="#chore-list-container"
                 _="on htmx:afterRequest trigger closeModal">
@@ -22,6 +22,7 @@ on keyup[key is 'Escape'] trigger closeModal
             </header>
             <div class="modal-body">
                 <fieldset role="group">
+                    <input name="choreListID" type="hidden" value="{{.ChoreListID}}"/>
                     <input autofocus id="new-chore-name-input" aria-label="chore name" type="text"
                            placeholder="name"
                            style="flex-grow: 8"

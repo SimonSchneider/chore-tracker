@@ -6,19 +6,11 @@ import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"github.com/SimonSchneider/goslu/srvu"
-	"github.com/SimonSchneider/goslu/templ"
 	"net/http"
 	"time"
 )
 
-type SettingsView struct {
-	UserID         string
-	Usernames      []string
-	ChoreLists     []cdb.ChoreList
-	CreatedInvites []cdb.GetInvitationsByCreatorRow
-}
-
-func SettingsPage(tmpls templ.TemplateProvider, db *sql.DB) http.Handler {
+func SettingsPage(tmpls *Templates, db *sql.DB) http.Handler {
 	q := cdb.New(db)
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userId := auth.MustGetUserID(ctx)
@@ -31,7 +23,7 @@ func SettingsPage(tmpls templ.TemplateProvider, db *sql.DB) http.Handler {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
 		invites, err := q.GetInvitationsByCreator(ctx, cdb.GetInvitationsByCreatorParams{CreatedBy: userId, ExpiresAt: time.Now().UnixMilli()})
-		return tmpls.ExecuteTemplate(w, "settings.page.gohtml", &SettingsView{
+		return tmpls.SettingsPage(w, SettingsView{
 			UserID:         userId,
 			Usernames:      usernames,
 			ChoreLists:     choreLists,

@@ -11,22 +11,22 @@
         {{ end }}
     </ul>
     <h2>Chore Lists</h2>
-    <a href="/chore-list/new">Create chore list</a>
+    <a href="/chore-lists/new">Create chore list</a>
     <ul>
         {{ range .ChoreLists }}
             <li>
-                <a href="/chore-list/{{ .ID }}">{{ .Name }}</a>
+                <a href="/chore-lists/{{ .ID }}">{{ .Name }}</a>
             </li>
         {{ else }}
             No chore lists created
         {{ end }}
     </ul>
     <h2>Created Invites</h2>
-    <a href="/invite/create">Create invite</a>
+    <a href="/invites/create">Create invite</a>
     <ul>
         {{ range .CreatedInvites }}
             <li>
-                <a href="/invite/{{ .ID }}">{{ .ID }}</a>
+                <a href="/invites/{{ .ID }}">{{ .ID }}</a>
                 {{ if .ChoreListName.Valid }}
                     ({{ .ChoreListName.String }})
                 {{ end }}

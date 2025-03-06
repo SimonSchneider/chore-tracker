@@ -1,0 +1,13 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+{{ template "head.gohtml" "Chores" }}
+<body>
+<header>
+    {{ template "chore_list.nav_header.gohtml" .List }}
+</header>
+<main>
+    {{ template "chore_list.gohtml" . }}
+</main>
+</body>
+</html>

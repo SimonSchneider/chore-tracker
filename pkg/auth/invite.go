@@ -33,7 +33,7 @@ func inviteCreateHandler(s InviteStore, cfg Config) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		http.Redirect(w, r, fmt.Sprintf("/invite/%s", invID), http.StatusFound)
+		http.Redirect(w, r, fmt.Sprintf("/invites/%s", invID), http.StatusFound)
 		return nil
 	}))
 }

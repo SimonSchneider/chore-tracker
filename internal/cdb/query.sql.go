@@ -44,7 +44,7 @@ func (q *Queries) CompleteChore(ctx context.Context, arg CompleteChoreParams) er
 
 const createChore = `-- name: CreateChore :one
 INSERT INTO chore
-    (id, name, interval, created_at, last_completion, snoozed_for, chore_list_id, created_by)
+(id, name, interval, created_at, last_completion, snoozed_for, chore_list_id, created_by)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
 `
@@ -153,13 +153,21 @@ func (q *Queries) DeleteChore(ctx context.Context, id string) error {
 }
 
 const getChore = `-- name: GetChore :one
-SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
+SELECT chore.id, chore.name, chore.interval, chore.last_completion, chore.snoozed_for, chore.created_at, chore.chore_list_id, chore.created_by
 FROM chore
-WHERE id = ?
+         JOIN chore_list cl ON chore.chore_list_id = cl.id
+         JOIN chore_list_members ON cl.id = chore_list_members.chore_list_id
+WHERE chore.id = ?
+  AND chore_list_members.user_id = ?
 `
 
-func (q *Queries) GetChore(ctx context.Context, id string) (Chore, error) {
-	row := q.db.QueryRowContext(ctx, getChore, id)
+type GetChoreParams struct {
+	ID     string
+	UserID string
+}
+
+func (q *Queries) GetChore(ctx context.Context, arg GetChoreParams) (Chore, error) {
+	row := q.db.QueryRowContext(ctx, getChore, arg.ID, arg.UserID)
 	var i Chore
 	err := row.Scan(
 		&i.ID,
@@ -220,6 +228,45 @@ func (q *Queries) GetChoreListsByUser(ctx context.Context, userID string) ([]Cho
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getChoresByList = `-- name: GetChoresByList :many
+SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
+FROM chore
+WHERE chore_list_id = ?
+ORDER BY last_completion DESC, name, id
+`
+
+func (q *Queries) GetChoresByList(ctx context.Context, choreListID string) ([]Chore, error) {
+	rows, err := q.db.QueryContext(ctx, getChoresByList, choreListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Chore
+	for rows.Next() {
+		var i Chore
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Interval,
+			&i.LastCompletion,
+			&i.SnoozedFor,
+			&i.CreatedAt,
+			&i.ChoreListID,
+			&i.CreatedBy,
 		); err != nil {
 			return nil, err
 		}

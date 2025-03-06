@@ -7,7 +7,6 @@ import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/sqlu"
 	"github.com/SimonSchneider/goslu/srvu"
-	"github.com/SimonSchneider/goslu/templ"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
@@ -15,11 +14,7 @@ import (
 
 type InviteStore struct {
 	db    *sql.DB
-	tmpls templ.TemplateProvider
-}
-
-type InviteCreateView struct {
-	ChoreLists []cdb.ChoreList
+	tmpls *Templates
 }
 
 func (s *InviteStore) CreateInvitePage(ctx context.Context, userID string, w http.ResponseWriter, r *http.Request) error {
@@ -27,7 +22,7 @@ func (s *InviteStore) CreateInvitePage(ctx context.Context, userID string, w htt
 	if err != nil {
 		return err
 	}
-	return s.tmpls.ExecuteTemplate(w, "invite_create.gohtml", InviteCreateView{ChoreLists: choreLists})
+	return s.tmpls.InviteCreate(w, InviteCreateView{ChoreLists: choreLists})
 }
 
 func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.Time, r *http.Request) (string, error) {
@@ -51,30 +46,19 @@ func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.
 	return inv.ID, err
 }
 
-type InviteView struct {
-	InviteID      string
-	ChoreListName string
-}
-
-type InviteAcceptView struct {
-	InviteID      string
-	ChoreListName string
-	InviterName   string
-	ExistingUser  bool
-}
-
 func (s *InviteStore) InvitePage(ctx context.Context, userID string, inviteID string, now time.Time, w http.ResponseWriter, r *http.Request) error {
 	invite, err := cdb.New(s.db).GetInvite(ctx, cdb.GetInviteParams{ID: inviteID, ExpiresAt: now.UnixMilli()})
 	if err != nil {
 		return err
 	}
 	if invite.CreatedBy == userID {
-		return s.tmpls.ExecuteTemplate(w, "invite.gohtml", InviteView{
+
+		return s.tmpls.InvitePage(w, InviteView{
 			InviteID:      invite.ID,
 			ChoreListName: invite.ChoreListName.String,
 		})
 	}
-	return s.tmpls.ExecuteTemplate(w, "invite_accept.page.gohtml", InviteAcceptView{
+	return s.tmpls.InviteAcceptPage(w, InviteAcceptView{
 		InviteID:      invite.ID,
 		ChoreListName: invite.ChoreListName.String,
 		InviterName:   invite.CreatedByName.String,

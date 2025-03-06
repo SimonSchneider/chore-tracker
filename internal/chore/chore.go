@@ -12,6 +12,7 @@ type Chore struct {
 	Interval       date.Duration `json:"interval,omitempty"`
 	LastCompletion date.Date     `json:"last_completion,omitempty"`
 	SnoozedFor     date.Duration `json:"znoozed_for,omitempty"`
+	ChoreListID    string        `json:"choreListID,omitempty"`
 }
 
 func (c *Chore) NextCompletion() date.Date {
@@ -37,5 +38,6 @@ func ChoreFromDb(row cdb.Chore) Chore {
 		Interval:       date.Duration(row.Interval),
 		LastCompletion: date.Date(row.LastCompletion),
 		SnoozedFor:     date.Duration(row.SnoozedFor),
+		ChoreListID:    row.ChoreListID,
 	}
 }

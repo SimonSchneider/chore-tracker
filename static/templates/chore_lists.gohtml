@@ -1,9 +1,9 @@
-{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.ChoreListView*/ -}}
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.ChoreListsView*/ -}}
 <div>
     <ul>
         {{ range .ChoreLists }}
             <li>
-                <a href="/chore-list/{{ .ID }}">{{ .Name }}</a>
+                <a href="/chore-lists/{{ .ID }}">{{ .Name }}</a>
             </li>
         {{ end }}
     </ul>

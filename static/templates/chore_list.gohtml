@@ -1,6 +1,6 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ListView*/ -}}
 <div class="container" id="chore-list-container">
-    {{range .Sections}}
+    {{range .Chores.Sections}}
         <details {{if .IsOpen }}open{{end}}>
             <summary>
                 <span>

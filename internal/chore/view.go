@@ -8,7 +8,6 @@ import (
 	"github.com/SimonSchneider/goslu/templ"
 	"net/http"
 	"sort"
-	"time"
 )
 
 type ListView struct {
@@ -65,20 +64,4 @@ func RenderListView(ctx context.Context, w http.ResponseWriter, tmpls templ.Temp
 		return srvu.Err(http.StatusInternalServerError, err)
 	}
 	return tmpls.ExecuteTemplate(w, "chore-list.gohtml", NewListView(today, chores))
-}
-
-type FrontPage struct {
-	Weekday time.Weekday
-	Chores  *ListView
-}
-
-func RenderFrontPage(ctx context.Context, w http.ResponseWriter, tmpls templ.TemplateProvider, db *sql.DB, today date.Date) error {
-	chores, err := List(ctx, db)
-	if err != nil {
-		return srvu.Err(http.StatusInternalServerError, err)
-	}
-	return tmpls.ExecuteTemplate(w, "front-page.gohtml", FrontPage{
-		Weekday: time.Now().Weekday(),
-		Chores:  NewListView(today, chores),
-	})
 }

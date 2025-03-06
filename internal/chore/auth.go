@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
-	"github.com/SimonSchneider/goslu/templ"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
@@ -14,7 +13,7 @@ import (
 
 type AuthProvider struct {
 	db    *sql.DB
-	tmpls templ.TemplateProvider
+	tmpls *Templates
 }
 
 func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (string, error) {
@@ -34,7 +33,7 @@ func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (s
 }
 
 func (a *AuthProvider) RenderLoginPage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return a.tmpls.ExecuteTemplate(w, "login.page.gohtml", nil)
+	return a.tmpls.LoginPage(w)
 }
 
 type DBTokenStore struct {

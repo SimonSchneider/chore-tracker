@@ -36,10 +36,11 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		return fmt.Errorf("failed to migrate db: %w", err)
 	}
 
-	public, tmpls, err := templ.GetPublicAndTemplates(choretracker.StaticEmbeddedFS, &templ.Config{
+	public, tmplProv, err := templ.GetPublicAndTemplates(choretracker.StaticEmbeddedFS, &templ.Config{
 		Watch:        cfg.Watch,
 		TmplPatterns: []string{"templates/*.gohtml"},
 	})
+	tmpls := &Templates{p: tmplProv}
 	if err != nil {
 		return fmt.Errorf("sub static: %w", err)
 	}
@@ -62,14 +63,19 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 			Store:       &DBTokenStore{DB: db},
 		},
 	}
+
 	mux := http.NewServeMux()
 	HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
-	HandleNested(mux, "/invite/", auth.InviteHandler(&InviteStore{db: db, tmpls: tmpls}, authConfig))
 	mux.Handle("GET /login", authConfig.LoginPage())
 	mux.Handle("POST /login", authConfig.LoginHandler())
 	mux.Handle("POST /logout", authConfig.LogoutHandler())
 	mux.Handle("GET /settings", srvu.With(SettingsPage(tmpls, db), authConfig.Middleware(false)))
-	mux.Handle("/", srvu.With(HtmlMux(db, tmpls), authConfig.Middleware(false)))
+
+	HandleNested(mux, "/invites/", auth.InviteHandler(&InviteStore{db: db, tmpls: tmpls}, authConfig))
+	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, tmpls), authConfig.Middleware(false)))
+	mux.Handle("/chores/", srvu.With(ChoreMux(db, tmpls), authConfig.Middleware(false)))
+	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
+
 	srv := &http.Server{
 		BaseContext: func(listener net.Listener) context.Context {
 			return ctx
@@ -83,7 +89,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		if err != nil {
 			return fmt.Errorf("failed to generate invite: %w", err)
 		}
-		logger.Printf("created invite: http://localhost%s/invite/%s/accept", cfg.Addr, invID)
+		logger.Printf("created invite: http://localhost%s/invites/%s/accept", cfg.Addr, invID)
 	}
 	return srvu.RunServerGracefully(ctx, srv, logger)
 }
