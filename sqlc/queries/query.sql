@@ -6,22 +6,18 @@ FROM chore
 WHERE chore.id = ?
   AND chore_list_members.user_id = ?;
 
--- name: ListChores :many
-SELECT *
-FROM chore
-ORDER BY last_completion DESC, name, id;
-
 -- name: CreateChore :one
 INSERT INTO chore
 (id, name, interval, created_at, last_completion, snoozed_for, chore_list_id, created_by)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
--- name: UpdateChore :exec
+-- name: UpdateChore :one
 UPDATE chore
 SET name     = ?,
     interval = ?
-WHERE id = ?;
+WHERE id = ?
+RETURNING *;
 
 -- name: DeleteChore :exec
 DELETE

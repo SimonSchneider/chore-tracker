@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"

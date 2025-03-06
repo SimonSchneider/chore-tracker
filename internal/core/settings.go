@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func SettingsPage(view *View, db *sql.DB) http.Handler {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
 		invites, err := q.GetInvitationsByCreator(ctx, cdb.GetInvitationsByCreatorParams{CreatedBy: userId, ExpiresAt: time.Now().UnixMilli()})
-		return view.SettingsPage(w, SettingsView{
+		return view.SettingsPage(w, r, SettingsView{
 			UserID:         userId,
 			Usernames:      usernames,
 			ChoreLists:     choreLists,

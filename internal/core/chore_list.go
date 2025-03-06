@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 
 func ChoreListNewPage(view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return view.ChoreListNewPage(w)
+		return view.ChoreListNewPage(w, r)
 	})
 }
 
@@ -63,7 +63,7 @@ func ChoreListsPage(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		return view.ChoreListsPage(w, ChoreListsView{
+		return view.ChoreListsPage(w, r, ChoreListsView{
 			ChoreLists: choreLists,
 		})
 	})
@@ -90,6 +90,15 @@ func ChoreListPage(db *sql.DB, view *View) http.Handler {
 		choreListID := r.PathValue("choreListID")
 		userID := auth.MustGetUserID(ctx)
 		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, choreListID)
+	})
+}
+
+func ChoreNewPage(view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		choreListID := r.PathValue("choreListID")
+		return view.ChoreModal(w, r, &Chore{
+			ChoreListID: choreListID,
+		})
 	})
 }
 

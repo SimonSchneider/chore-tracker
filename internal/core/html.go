@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"
@@ -25,41 +25,7 @@ func ChoreAddHandler(db *sql.DB, view *View) http.Handler {
 	})
 }
 
-func HtmlUpdate(db *sql.DB, view *View) http.Handler {
-	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
-		if id == "" {
-			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
-		}
-		fmt.Printf("id: %s\n", id)
-		var inp Input
-		if err := srvu.Decode(r, &inp, false); err != nil {
-			return srvu.Err(http.StatusBadRequest, fmt.Errorf("decoding input: %w", err))
-		}
-		if err := Update(ctx, db, id, inp); err != nil {
-			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("updating the chore: %w", err))
-		}
-		// TODO: fix
-		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, "")
-	})
-}
-
-func HandlerDelete(db *sql.DB) http.Handler {
-	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		id := r.PathValue("id")
-		if id == "" {
-			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
-		}
-		if err := Delete(ctx, db, id); err != nil {
-			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("deleting the chore: %w", err))
-		}
-		w.WriteHeader(http.StatusOK)
-		return nil
-	})
-}
-
-func HanderGet(db *sql.DB, view *View) http.Handler {
+func ChoreEditPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		userID := auth.MustGetUserID(ctx)
@@ -70,7 +36,7 @@ func HanderGet(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		return view.ChoreElement(w, ch)
+		return view.ChoreModal(w, r, ch)
 	})
 }
 
@@ -102,11 +68,14 @@ func ChoreCompleteHandler(db *sql.DB, view *View) http.Handler {
 		if err := srvu.Decode(r, &inp, false); err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("decoding input: %w", err))
 		}
-		if err := Complete(ctx, db, id, inp.CompletedAt); err != nil {
+		chore, err := Get(ctx, db, userID, id)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
+		}
+		if err := Complete(ctx, db, userID, id, inp.CompletedAt); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("completing the chore: %w", err))
 		}
-		// TODO: fix
-		return ChoreListRender(ctx, db, view, w, r, today, userID, "")
+		return ChoreListRender(ctx, db, view, w, r, today, userID, chore.ChoreListID)
 	})
 }
 
@@ -118,11 +87,14 @@ func ChoreSnoozeHandler(db *sql.DB, view *View) http.Handler {
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
+		chore, err := Get(ctx, db, userID, id)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
+		}
 		if err := Snooze(ctx, db, today, userID, id, 1*date.Day); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
 		}
-		// TODO: fix
-		return ChoreListRender(ctx, db, view, w, r, today, userID, "")
+		return ChoreListRender(ctx, db, view, w, r, today, userID, chore.ChoreListID)
 	})
 }
 
@@ -134,24 +106,40 @@ func ChoreExpediteHandler(db *sql.DB, view *View) http.Handler {
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
+		chore, err := Get(ctx, db, userID, id)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
+		}
 		if err := Expedite(ctx, db, today, userID, id); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
 		}
-		// TODO: fix
-		return ChoreListRender(ctx, db, view, w, r, today, userID, "")
+		return ChoreListRender(ctx, db, view, w, r, today, userID, chore.ChoreListID)
 	})
 }
 
-func ChoreNewPage(view *View) http.Handler {
+func ChoreUpdateHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		choreListID := r.PathValue("choreListID")
-		return view.ChoreModal(w, &Chore{
-			ChoreListID: choreListID,
-		})
+		id := r.PathValue("id")
+		userID := auth.MustGetUserID(ctx)
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		var inp Input
+		if err := srvu.Decode(r, &inp, false); err != nil {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("decoding input: %w", err))
+		}
+		chore, err := Get(ctx, db, userID, id)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
+		}
+		if _, err := Update(ctx, db, id, inp); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("updating the chore: %w", err))
+		}
+		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, chore.ChoreListID)
 	})
 }
 
-func ChoreEditPage(db *sql.DB, view *View) http.Handler {
+func ChorePage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		userID := auth.MustGetUserID(ctx)
@@ -162,19 +150,38 @@ func ChoreEditPage(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		return view.ChoreModal(w, ch)
+		return view.ChoreElement(w, r, ch)
+	})
+}
+
+func ChoreDeleteHandler(db *sql.DB) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		userID := auth.MustGetUserID(ctx)
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		_, err := Get(ctx, db, userID, id)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
+		}
+		if err := Delete(ctx, db, id); err != nil {
+			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("deleting the chore: %w", err))
+		}
+		w.WriteHeader(http.StatusOK)
+		return nil
 	})
 }
 
 func ChoreMux(db *sql.DB, view *View) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("POST /chores/new", ChoreAddHandler(db, view))
 	mux.Handle("GET /chores/{id}/edit", ChoreEditPage(db, view))
 	mux.Handle("POST /chores/{id}/complete", ChoreCompleteHandler(db, view))
 	mux.Handle("POST /chores/{id}/snooze", ChoreSnoozeHandler(db, view))
 	mux.Handle("POST /chores/{id}/expedite", ChoreExpediteHandler(db, view))
-	mux.Handle("GET /chores/{id}", HanderGet(db, view))
-	mux.Handle("DELETE /chores/{id}", HandlerDelete(db))
-	mux.Handle("PUT /chores/{id}", HtmlUpdate(db, view))
+	mux.Handle("POST /chores/{$}", ChoreAddHandler(db, view))
+	mux.Handle("GET /chores/{id}", ChorePage(db, view))
+	mux.Handle("PUT /chores/{id}", ChoreUpdateHandler(db, view))
+	mux.Handle("DELETE /chores/{id}", ChoreDeleteHandler(db))
 	return mux
 }

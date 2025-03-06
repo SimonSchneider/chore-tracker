@@ -281,44 +281,6 @@ func (q *Queries) GetChoresByList(ctx context.Context, choreListID string) ([]Ch
 	return items, nil
 }
 
-const listChores = `-- name: ListChores :many
-SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
-FROM chore
-ORDER BY last_completion DESC, name, id
-`
-
-func (q *Queries) ListChores(ctx context.Context) ([]Chore, error) {
-	rows, err := q.db.QueryContext(ctx, listChores)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Chore
-	for rows.Next() {
-		var i Chore
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Interval,
-			&i.LastCompletion,
-			&i.SnoozedFor,
-			&i.CreatedAt,
-			&i.ChoreListID,
-			&i.CreatedBy,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const snoozeChore = `-- name: SnoozeChore :exec
 UPDATE chore
 SET snoozed_for = ?
@@ -335,11 +297,12 @@ func (q *Queries) SnoozeChore(ctx context.Context, arg SnoozeChoreParams) error 
 	return err
 }
 
-const updateChore = `-- name: UpdateChore :exec
+const updateChore = `-- name: UpdateChore :one
 UPDATE chore
 SET name     = ?,
     interval = ?
 WHERE id = ?
+RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by
 `
 
 type UpdateChoreParams struct {
@@ -348,7 +311,18 @@ type UpdateChoreParams struct {
 	ID       string
 }
 
-func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) error {
-	_, err := q.db.ExecContext(ctx, updateChore, arg.Name, arg.Interval, arg.ID)
-	return err
+func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) (Chore, error) {
+	row := q.db.QueryRowContext(ctx, updateChore, arg.Name, arg.Interval, arg.ID)
+	var i Chore
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Interval,
+		&i.LastCompletion,
+		&i.SnoozedFor,
+		&i.CreatedAt,
+		&i.ChoreListID,
+		&i.CreatedBy,
+	)
+	return i, err
 }

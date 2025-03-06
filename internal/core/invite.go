@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func (s *InviteStore) CreateInvitePage(ctx context.Context, userID string, w htt
 	if err != nil {
 		return err
 	}
-	return s.view.InviteCreate(w, InviteCreateView{ChoreLists: choreLists})
+	return s.view.InviteCreate(w, r, InviteCreateView{ChoreLists: choreLists})
 }
 
 func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.Time, r *http.Request) (string, error) {
@@ -53,12 +53,12 @@ func (s *InviteStore) InvitePage(ctx context.Context, userID string, inviteID st
 	}
 	if invite.CreatedBy == userID {
 
-		return s.view.InvitePage(w, InviteView{
+		return s.view.InvitePage(w, r, InviteView{
 			InviteID:      invite.ID,
 			ChoreListName: invite.ChoreListName.String,
 		})
 	}
-	return s.view.InviteAcceptPage(w, InviteAcceptView{
+	return s.view.InviteAcceptPage(w, r, InviteAcceptView{
 		InviteID:      invite.ID,
 		ChoreListName: invite.ChoreListName.String,
 		InviterName:   invite.CreatedByName.String,

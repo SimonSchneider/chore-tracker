@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"

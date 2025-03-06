@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (s
 }
 
 func (a *AuthProvider) RenderLoginPage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return a.view.LoginPage(w)
+	return a.view.LoginPage(w, r)
 }
 
 type DBTokenStore struct {

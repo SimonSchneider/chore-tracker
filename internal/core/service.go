@@ -1,4 +1,4 @@
-package chore
+package core
 
 import (
 	"context"
@@ -33,14 +33,6 @@ func ChoresFromDb(dbChores []cdb.Chore) []Chore {
 		chores[i] = ChoreFromDb(dbChore)
 	}
 	return chores
-}
-
-func List(ctx context.Context, db *sql.DB) ([]Chore, error) {
-	dbChores, err := cdb.New(db).ListChores(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("listing chores: %w", err)
-	}
-	return ChoresFromDb(dbChores), nil
 }
 
 func Get(ctx context.Context, db cdb.DBTX, userID, id string) (*Chore, error) {
@@ -78,22 +70,23 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, inp
 	return &chore, nil
 }
 
-func Update(ctx context.Context, db *sql.DB, id string, input Input) error {
+func Update(ctx context.Context, db *sql.DB, id string, input Input) (*Chore, error) {
 	if id == "" {
-		return fmt.Errorf("illegal empty id for updating chore")
+		return nil, fmt.Errorf("illegal empty id for updating chore")
 	}
 	if input.Name == "" || input.Interval.Zero() {
-		return fmt.Errorf("illegal empty name or interval for updating chore")
+		return nil, fmt.Errorf("illegal empty name or interval for updating chore")
 	}
-	err := cdb.New(db).UpdateChore(ctx, cdb.UpdateChoreParams{
+	dbChore, err := cdb.New(db).UpdateChore(ctx, cdb.UpdateChoreParams{
 		ID:       id,
 		Name:     input.Name,
 		Interval: int64(input.Interval),
 	})
 	if err != nil {
-		return fmt.Errorf("updating chore: %w", err)
+		return nil, fmt.Errorf("updating chore: %w", err)
 	}
-	return nil
+	chore := ChoreFromDb(dbChore)
+	return &chore, nil
 }
 
 func Delete(ctx context.Context, db *sql.DB, id string) error {
@@ -103,7 +96,8 @@ func Delete(ctx context.Context, db *sql.DB, id string) error {
 	return nil
 }
 
-func Complete(ctx context.Context, db *sql.DB, id string, occurredAt date.Date) error {
+func Complete(ctx context.Context, db *sql.DB, userID, id string, occurredAt date.Date) error {
+	// TODO: idempotency (with etag versioning?)
 	// TODO: don't complete if already completed on this day.
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -115,7 +109,7 @@ func Complete(ctx context.Context, db *sql.DB, id string, occurredAt date.Date) 
 	}
 	occAt := int64(occurredAt)
 	txc := cdb.New(tx)
-	if err := txc.CreateChoreEvent(ctx, cdb.CreateChoreEventParams{ID: NewId(), ChoreID: id, OccurredAt: occAt}); err != nil {
+	if err := txc.CreateChoreEvent(ctx, cdb.CreateChoreEventParams{ID: NewId(), ChoreID: id, OccurredAt: occAt, CreatedBy: userID, EventType: "complete"}); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("inserting new event: %w", err)
 	}

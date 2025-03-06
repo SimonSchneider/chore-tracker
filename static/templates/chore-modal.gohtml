@@ -5,7 +5,7 @@ on keyup[key is 'Escape'] trigger closeModal
 " open>
     <div class="modal-underlay" _="on click trigger closeModal"></div>
     <article>
-        <form {{if .ID }} hx-put="/chores/{{.ID}}" {{ else }} hx-post="/chores/new" {{ end }}
+        <form {{if .ID }} hx-put="/chores/{{.ID}}" {{ else }} hx-post="/chores/" {{ end }}
                 hx-swap="outerHTML"
                 hx-target="#chore-list-container"
                 _="on htmx:afterRequest trigger closeModal">
@@ -34,7 +34,7 @@ on keyup[key is 'Escape'] trigger closeModal
             </div>
             <footer class="modal-footer">
                 {{if .ID}}
-                    <button type="reset" aria-label="Delete" hx-delete="/{{.ID}}"
+                    <button type="reset" aria-label="Delete" hx-delete="/chores/{{.ID}}"
                             hx-target="#chore-{{.ID}}" hx-swap="delete">
                         Delete
                     </button>
