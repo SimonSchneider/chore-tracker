@@ -24,3 +24,9 @@ FROM invitation inv
          LEFT JOIN chore_list cl ON inv.chore_list_id = cl.id
 WHERE inv.created_by = ?
   AND inv.expires_at > ?;
+
+-- name: GetInvitationsByChoreList :many
+SELECT *
+FROM invitation
+WHERE chore_list_id = ?
+  AND expires_at > ?;

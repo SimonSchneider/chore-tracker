@@ -16,7 +16,7 @@ type InviteStore interface {
 }
 
 func inviteCreatePage(s InviteStore, cfg Config) http.Handler {
-	return cfg.Middleware(false)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return cfg.Middleware(false, true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userID := MustGetUserID(ctx)
 		if err := s.CreateInvitePage(ctx, userID, w, r); err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
@@ -26,7 +26,7 @@ func inviteCreatePage(s InviteStore, cfg Config) http.Handler {
 }
 
 func inviteCreateHandler(s InviteStore, cfg Config) http.Handler {
-	return cfg.Middleware(false)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return cfg.Middleware(false, true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userID := MustGetUserID(ctx)
 		now := time.Now()
 		invID, err := s.CreateInvite(ctx, userID, now, r)
@@ -39,7 +39,7 @@ func inviteCreateHandler(s InviteStore, cfg Config) http.Handler {
 }
 
 func invitePage(s InviteStore, cfg Config) http.Handler {
-	return cfg.Middleware(true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return cfg.Middleware(true, true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		inviteID := r.PathValue("inviteID")
 		userID, _ := GetUserID(ctx)
 		return s.InvitePage(ctx, userID, inviteID, time.Now(), w, r)
@@ -47,7 +47,7 @@ func invitePage(s InviteStore, cfg Config) http.Handler {
 }
 
 func inviteAcceptHandler(s InviteStore, cfg Config) http.Handler {
-	return cfg.Middleware(true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return cfg.Middleware(true, true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userID, _ := GetUserID(ctx)
 		inviteID := r.PathValue("inviteID")
 		now := time.Now()

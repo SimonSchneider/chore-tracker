@@ -207,27 +207,75 @@ func (q *Queries) GetChoreListByUser(ctx context.Context, arg GetChoreListByUser
 	return i, err
 }
 
+const getChoreListMembers = `-- name: GetChoreListMembers :many
+SELECT u.id, u.display_name
+FROM user u
+         JOIN chore_list_members clm ON u.id = clm.user_id
+WHERE clm.chore_list_id = ?
+`
+
+type GetChoreListMembersRow struct {
+	ID          string
+	DisplayName string
+}
+
+func (q *Queries) GetChoreListMembers(ctx context.Context, choreListID string) ([]GetChoreListMembersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getChoreListMembers, choreListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetChoreListMembersRow
+	for rows.Next() {
+		var i GetChoreListMembersRow
+		if err := rows.Scan(&i.ID, &i.DisplayName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getChoreListsByUser = `-- name: GetChoreListsByUser :many
-SELECT cl.id, cl.created_at, cl.updated_at, cl.name
+SELECT cl.id, cl.created_at, cl.updated_at, cl.name,
+       (SELECT COUNT(*) FROM chore WHERE chore_list_id = cl.id)              AS chore_count,
+       (SELECT COUNT(*) FROM chore_list_members WHERE chore_list_id = cl.id) AS member_count
 FROM chore_list cl
          JOIN chore_list_members clm ON cl.id = clm.chore_list_id
 WHERE clm.user_id = ?
 `
 
-func (q *Queries) GetChoreListsByUser(ctx context.Context, userID string) ([]ChoreList, error) {
+type GetChoreListsByUserRow struct {
+	ID          string
+	CreatedAt   int64
+	UpdatedAt   int64
+	Name        string
+	ChoreCount  int64
+	MemberCount int64
+}
+
+func (q *Queries) GetChoreListsByUser(ctx context.Context, userID string) ([]GetChoreListsByUserRow, error) {
 	rows, err := q.db.QueryContext(ctx, getChoreListsByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChoreList
+	var items []GetChoreListsByUserRow
 	for rows.Next() {
-		var i ChoreList
+		var i GetChoreListsByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Name,
+			&i.ChoreCount,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}

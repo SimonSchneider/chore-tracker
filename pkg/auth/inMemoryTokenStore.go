@@ -45,12 +45,12 @@ func (s *InMemoryTokenStore) DeleteTokens(ctx context.Context, userID string) er
 	return nil
 }
 
-func (s *InMemoryTokenStore) VerifyToken(ctx context.Context, token string, now time.Time) (string, bool, error) {
+func (s *InMemoryTokenStore) VerifyToken(ctx context.Context, token string, now time.Time) (string, time.Time, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	sToken, ok := s.tokens[token]
 	if !ok {
-		return "", false, nil
+		return "", time.Time{}, false, nil
 	}
-	return sToken.userID, sToken.expiresAt.After(now), nil
+	return sToken.userID, sToken.expiresAt, sToken.expiresAt.After(now), nil
 }

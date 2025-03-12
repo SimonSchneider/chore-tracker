@@ -68,6 +68,47 @@ func (q *Queries) DeleteInvite(ctx context.Context, arg DeleteInviteParams) (Inv
 	return i, err
 }
 
+const getInvitationsByChoreList = `-- name: GetInvitationsByChoreList :many
+SELECT id, created_at, expires_at, chore_list_id, created_by
+FROM invitation
+WHERE chore_list_id = ?
+  AND expires_at > ?
+`
+
+type GetInvitationsByChoreListParams struct {
+	ChoreListID sql.NullString
+	ExpiresAt   int64
+}
+
+func (q *Queries) GetInvitationsByChoreList(ctx context.Context, arg GetInvitationsByChoreListParams) ([]Invitation, error) {
+	rows, err := q.db.QueryContext(ctx, getInvitationsByChoreList, arg.ChoreListID, arg.ExpiresAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Invitation
+	for rows.Next() {
+		var i Invitation
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.ChoreListID,
+			&i.CreatedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getInvitationsByCreator = `-- name: GetInvitationsByCreator :many
 SELECT inv.id, inv.created_at, inv.expires_at, inv.chore_list_id, inv.created_by, cl.name as chore_list_name
 FROM invitation inv

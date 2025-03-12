@@ -16,6 +16,10 @@ type AuthProvider struct {
 	view *View
 }
 
+func NewAuthProvider(db *sql.DB, view *View) *AuthProvider {
+	return &AuthProvider{db: db, view: view}
+}
+
 func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (string, error) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
@@ -32,10 +36,6 @@ func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (s
 	return pwAuth.UserID, nil
 }
 
-func (a *AuthProvider) RenderLoginPage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return a.view.LoginPage(w, r)
-}
-
 type DBTokenStore struct {
 	DB *sql.DB
 }
@@ -48,13 +48,13 @@ func (s *DBTokenStore) DeleteTokens(ctx context.Context, userID string) error {
 	return cdb.New(s.DB).DeleteTokensByUserId(ctx, userID)
 }
 
-func (s *DBTokenStore) VerifyToken(ctx context.Context, token string, now time.Time) (string, bool, error) {
+func (s *DBTokenStore) VerifyToken(ctx context.Context, token string, now time.Time) (string, time.Time, bool, error) {
 	res, err := cdb.New(s.DB).GetToken(ctx, cdb.GetTokenParams{Token: token, ExpiresAt: now.UnixMilli()})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", false, nil
+			return "", time.Time{}, false, nil
 		}
-		return "", false, err
+		return "", time.Time{}, false, err
 	}
-	return res.UserID, true, nil
+	return res.UserID, time.UnixMilli(res.ExpiresAt), true, nil
 }

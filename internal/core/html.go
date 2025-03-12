@@ -21,7 +21,12 @@ func ChoreAddHandler(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("creating the chore: %w", err))
 		}
-		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, chore.ChoreListID)
+		if r.Header.Get("HX-Request") == "true" {
+			return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, chore.ChoreListID)
+		} else {
+			http.Redirect(w, r, fmt.Sprintf("/chores/%s", chore.ID), http.StatusCreated)
+			return nil
+		}
 	})
 }
 

@@ -12,16 +12,30 @@ type View struct {
 	p templ.TemplateProvider
 }
 
+func NewView(p templ.TemplateProvider) *View {
+	return &View{p: p}
+}
+
 type ChoreListsView struct {
-	ChoreLists []cdb.ChoreList
+	ChoreLists []cdb.GetChoreListsByUserRow
 }
 
-func (t *View) ChoreListsPage(w io.Writer, r *http.Request, d ChoreListsView) error {
-	return t.p.ExecuteTemplate(w, "chore_lists.page.gohtml", d)
+func (v *View) ChoreListsPage(w io.Writer, r *http.Request, d ChoreListsView) error {
+	return v.p.ExecuteTemplate(w, "chore_lists.page.gohtml", d)
 }
 
-func (t *View) ChoreListNewPage(w io.Writer, r *http.Request) error {
-	return t.p.ExecuteTemplate(w, "chore-list-new.page.gohtml", nil)
+func (v *View) ChoreListNewPage(w io.Writer, r *http.Request) error {
+	return v.p.ExecuteTemplate(w, "chore-list-new.page.gohtml", nil)
+}
+
+type ChoreListEditView struct {
+	List    cdb.ChoreList
+	Members []cdb.GetChoreListMembersRow
+	Invites []cdb.Invitation
+}
+
+func (v *View) ChoreListEditPage(w io.Writer, r *http.Request, d ChoreListEditView) error {
+	return v.p.ExecuteTemplate(w, "chore_list_edit.page.gohtml", d)
 }
 
 type ChoreListView struct {
@@ -30,34 +44,34 @@ type ChoreListView struct {
 	Chores  *ListView
 }
 
-func (t *View) ChoreListPage(w io.Writer, r *http.Request, d ChoreListView) error {
+func (v *View) ChoreListPage(w io.Writer, r *http.Request, d ChoreListView) error {
 	if r.Header.Get("HX-Request") == "true" {
-		return t.p.ExecuteTemplate(w, "chore_list.gohtml", d)
+		return v.p.ExecuteTemplate(w, "chore_list.gohtml", d)
 	}
-	return t.p.ExecuteTemplate(w, "chore_list.page.gohtml", d)
+	return v.p.ExecuteTemplate(w, "chore_list.page.gohtml", d)
 }
 
-func (t *View) ChoreModal(w io.Writer, r *http.Request, d *Chore) error {
-	return t.p.ExecuteTemplate(w, "chore-modal.gohtml", d)
+func (v *View) ChoreModal(w io.Writer, r *http.Request, d *Chore) error {
+	return v.p.ExecuteTemplate(w, "chore-modal.gohtml", d)
 }
 
 type SettingsView struct {
 	UserID         string
 	Usernames      []string
-	ChoreLists     []cdb.ChoreList
+	ChoreLists     []cdb.GetChoreListsByUserRow
 	CreatedInvites []cdb.GetInvitationsByCreatorRow
 }
 
-func (t *View) SettingsPage(w io.Writer, r *http.Request, d SettingsView) error {
-	return t.p.ExecuteTemplate(w, "settings.page.gohtml", d)
+func (v *View) SettingsPage(w io.Writer, r *http.Request, d SettingsView) error {
+	return v.p.ExecuteTemplate(w, "settings.page.gohtml", d)
 }
 
 type InviteCreateView struct {
-	ChoreLists []cdb.ChoreList
+	ChoreLists []cdb.GetChoreListsByUserRow
 }
 
-func (t *View) InviteCreate(w io.Writer, r *http.Request, d InviteCreateView) error {
-	return t.p.ExecuteTemplate(w, "invite_create.gohtml", d)
+func (v *View) InviteCreate(w io.Writer, r *http.Request, d InviteCreateView) error {
+	return v.p.ExecuteTemplate(w, "invite_create.gohtml", d)
 }
 
 type InviteView struct {
@@ -65,8 +79,8 @@ type InviteView struct {
 	ChoreListName string
 }
 
-func (t *View) InvitePage(w io.Writer, r *http.Request, d InviteView) error {
-	return t.p.ExecuteTemplate(w, "invite.gohtml", d)
+func (v *View) InvitePage(w io.Writer, r *http.Request, d InviteView) error {
+	return v.p.ExecuteTemplate(w, "invite.gohtml", d)
 }
 
 type InviteAcceptView struct {
@@ -76,14 +90,14 @@ type InviteAcceptView struct {
 	ExistingUser  bool
 }
 
-func (t *View) InviteAcceptPage(w io.Writer, r *http.Request, d InviteAcceptView) error {
-	return t.p.ExecuteTemplate(w, "invite_accept.page.gohtml", d)
+func (v *View) InviteAcceptPage(w io.Writer, r *http.Request, d InviteAcceptView) error {
+	return v.p.ExecuteTemplate(w, "invite_accept.page.gohtml", d)
 }
 
-func (t *View) ChoreElement(w io.Writer, r *http.Request, d *Chore) error {
-	return t.p.ExecuteTemplate(w, "chore-element.gohtml", d)
+func (v *View) ChoreElement(w io.Writer, r *http.Request, d *Chore) error {
+	return v.p.ExecuteTemplate(w, "chore-element.gohtml", d)
 }
 
-func (t *View) LoginPage(w io.Writer, r *http.Request) error {
-	return t.p.ExecuteTemplate(w, "login.page.gohtml", nil)
+func (v *View) LoginPage(w io.Writer, r *http.Request) error {
+	return v.p.ExecuteTemplate(w, "login.page.gohtml", nil)
 }

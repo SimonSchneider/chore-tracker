@@ -113,9 +113,10 @@ func createUser(ctx context.Context, q *cdb.Queries, now time.Time, r *http.Requ
 		return "", srvu.Err(http.StatusInternalServerError, fmt.Errorf("hashing password: %w", err))
 	}
 	user, err := q.CreateUser(ctx, cdb.CreateUserParams{
-		ID:        NewId(),
-		CreatedAt: now.UnixMilli(),
-		UpdatedAt: now.UnixMilli(),
+		ID:          NewId(),
+		DisplayName: username,
+		CreatedAt:   now.UnixMilli(),
+		UpdatedAt:   now.UnixMilli(),
 	})
 	if err != nil {
 		return "", srvu.Err(http.StatusInternalServerError, fmt.Errorf("create user: %w", err))

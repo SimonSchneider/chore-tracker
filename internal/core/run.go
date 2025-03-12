@@ -22,6 +22,25 @@ import (
 	"time"
 )
 
+func LoginPage(view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		return view.LoginPage(w, r)
+	})
+}
+
+func Mux(db *sql.DB, view *View, authConfig auth.Config) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("GET /login", srvu.With(LoginPage(view), authConfig.Middleware(true, true)))
+	mux.Handle(authConfig.SessionsPath, authConfig.SessionHandler())
+	mux.Handle("GET /settings", srvu.With(SettingsPage(view, db), authConfig.Middleware(false, false)))
+
+	HandleNested(mux, "/invites/", auth.InviteHandler(&InviteStore{db: db, view: view}, authConfig))
+	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view), authConfig.Middleware(false, false)))
+	mux.Handle("/chores/", srvu.With(ChoreMux(db, view), authConfig.Middleware(false, false)))
+	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
+	return mux
+}
+
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, getEnv func(string) string, getwd func() (string, error)) error {
 	cfg, err := parseConfig(args[1:], getEnv)
 	if err != nil {
@@ -46,18 +65,21 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 	authConfig := auth.Config{
 		Provider:                    &AuthProvider{db: db, view: view},
+		RedirectParam:               "redirect",
 		UnauthorizedRedirect:        "/login",
 		DefaultLogoutRedirect:       "/login",
 		LoginFailedRedirect:         "/login",
 		DefaultLoginSuccessRedirect: "/",
-		ShortLivedCookie: auth.CookieConfig{
-			Name:        "session",
-			Expire:      1 * time.Hour,
-			TokenLength: 32,
-			Store:       auth.NewInMemoryTokenStore(),
+		SessionsPath:                "/sessions/",
+		SessionCookie: auth.CookieConfig{
+			Name:          "session",
+			Expire:        5 * time.Second,
+			RefreshMargin: 2 * time.Second,
+			TokenLength:   32,
+			Store:         auth.NewInMemoryTokenStore(),
 		},
-		LongLivedCookie: auth.CookieConfig{
-			Name:        "remember",
+		RefreshCookie: auth.CookieConfig{
+			Name:        "refresh_session",
 			Expire:      24 * time.Hour * 30,
 			TokenLength: 102,
 			Store:       &DBTokenStore{DB: db},
@@ -66,15 +88,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 
 	mux := http.NewServeMux()
 	HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
-	mux.Handle("GET /login", authConfig.LoginPage())
-	mux.Handle("POST /login", authConfig.LoginHandler())
-	mux.Handle("POST /logout", authConfig.LogoutHandler())
-	mux.Handle("GET /settings", srvu.With(SettingsPage(view, db), authConfig.Middleware(false)))
-
-	HandleNested(mux, "/invites/", auth.InviteHandler(&InviteStore{db: db, view: view}, authConfig))
-	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view), authConfig.Middleware(false)))
-	mux.Handle("/chores/", srvu.With(ChoreMux(db, view), authConfig.Middleware(false)))
-	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
+	mux.Handle("/", Mux(db, view, authConfig))
 
 	srv := &http.Server{
 		BaseContext: func(listener net.Listener) context.Context {
@@ -89,7 +103,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		if err != nil {
 			return fmt.Errorf("failed to generate invite: %w", err)
 		}
-		logger.Printf("created invite: http://localhost%s/invites/%s/accept", cfg.Addr, invID)
+		logger.Printf("created invite: http://localhost%s/invites/%s", cfg.Addr, invID)
 	}
 	return srvu.RunServerGracefully(ctx, srv, logger)
 }
@@ -101,9 +115,10 @@ func GenerateInvite(ctx context.Context, db *sql.DB) (string, error) {
 	systemUser, err := q.GetUser(ctx, systemUserID)
 	if err != nil || systemUser.ID == "" {
 		systemUser, err = cdb.New(db).CreateUser(ctx, cdb.CreateUserParams{
-			ID:        systemUserID,
-			CreatedAt: time.Now().UnixMilli(),
-			UpdatedAt: time.Now().UnixMilli(),
+			ID:          systemUserID,
+			DisplayName: systemUserID,
+			CreatedAt:   time.Now().UnixMilli(),
+			UpdatedAt:   time.Now().UnixMilli(),
 		})
 		if err != nil {
 			return "", fmt.Errorf("create system user: %w", err)

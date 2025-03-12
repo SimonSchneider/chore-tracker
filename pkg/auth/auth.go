@@ -6,6 +6,7 @@ import (
 	"github.com/SimonSchneider/goslu/sid"
 	"github.com/SimonSchneider/goslu/srvu"
 	"net/http"
+	"path"
 	"time"
 )
 
@@ -21,51 +22,100 @@ import (
 
 type Provider interface {
 	AuthenticateUser(ctx context.Context, r *http.Request) (userID string, err error)
-	RenderLoginPage(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 }
 
 type TokenStore interface {
 	StoreToken(ctx context.Context, userID, token string, expiresAt time.Time) error
 	DeleteTokens(ctx context.Context, userID string) error
-	VerifyToken(ctx context.Context, token string, now time.Time) (string, bool, error)
+	VerifyToken(ctx context.Context, token string, now time.Time) (string, time.Time, bool, error)
 }
 
 type CookieConfig struct {
-	Name        string
-	Expire      time.Duration
-	TokenLength int
-	Store       TokenStore
+	Name          string
+	Expire        time.Duration
+	RefreshMargin time.Duration
+	TokenLength   int
+	Store         TokenStore
 }
 
 type Config struct {
 	Provider                    Provider
+	RedirectParam               string
 	UnauthorizedRedirect        string
 	DefaultLogoutRedirect       string
 	DefaultLoginSuccessRedirect string
 	LoginFailedRedirect         string
-	ShortLivedCookie            CookieConfig
-	LongLivedCookie             CookieConfig
+	SessionsPath                string
+	SessionCookie               CookieConfig
+	RefreshCookie               CookieConfig
 }
 
-func (c *Config) LoginPage() http.Handler {
-	return c.Middleware(true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		existing, _ := GetUserID(ctx)
-		if existing != "" {
-			redirectUrl := r.URL.Query().Get("redirect")
-			if redirectUrl == "" {
-				redirectUrl = c.DefaultLoginSuccessRedirect
-			}
-			http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
+func (c *Config) SessionHandler() http.Handler {
+	mux := http.NewServeMux()
+	prefix := c.sessionPathPrefix()
+	mux.Handle(path.Join(prefix, "/refresh"), c.RefreshHandler())
+	mux.Handle(fmt.Sprintf("POST %s/{$}", path.Join(prefix, "/")), c.CreateSessionHandler())
+	mux.Handle(fmt.Sprintf("DELETE %s/{$}", path.Join(prefix, "/")), c.DeleteSessionHandler())
+	return mux
+}
+
+func (c *Config) sessionPathPrefix() string {
+	if c.SessionsPath == "" {
+		panic("SessionsPath: must specify sessions path")
+	}
+	return c.SessionsPath
+}
+
+func (c *Config) RefreshHandler() http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		userID, refresh, err := c.RefreshCookie.verifyToken(r)
+		redirect := r.URL.Query().Get(c.redirectParam())
+		if redirect == "" {
+			redirect = c.DefaultLoginSuccessRedirect
+		}
+		unauthorizedRedirect := func() {
+			http.Redirect(w, r, fmt.Sprintf("%s?%s=%s", c.UnauthorizedRedirect, c.redirectParam(), redirect), http.StatusSeeOther)
+		}
+		if err != nil {
+			c.SessionCookie.deleteCookie(w, c.sessionCookiePath())
+			c.RefreshCookie.deleteCookie(w, c.refreshCookiePath())
+			unauthorizedRedirect()
 			return nil
 		}
-		return c.Provider.RenderLoginPage(ctx, w, r)
-	}))
+		if err := c.SessionCookie.generateStoreAndSetTokenCookie(r.Context(), userID, c.sessionCookiePath(), w); err != nil {
+			srvu.GetLogger(r.Context()).Printf("failed generate short token: %v", err)
+			unauthorizedRedirect()
+			return nil
+		}
+		if refresh {
+			if err := c.RefreshCookie.generateStoreAndSetTokenCookie(r.Context(), userID, c.refreshCookiePath(), w); err != nil {
+				srvu.GetLogger(r.Context()).Printf("failed generate long token: %v", err)
+			}
+		}
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		return nil
+	})
 }
 
-func (c *Config) LoginHandler() http.Handler {
+func (c *Config) refreshCookiePath() string {
+	return path.Join(c.SessionsPath, "/refresh/")
+}
+
+func (c *Config) sessionCookiePath() string {
+	return "/"
+}
+
+func (c *Config) redirectParam() string {
+	if c.RedirectParam == "" {
+		panic("redirect param is required")
+	}
+	return c.RedirectParam
+}
+
+func (c *Config) CreateSessionHandler() http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		rememberMe := r.FormValue("rememberMe") == "on"
-		redirectUrl := r.URL.Query().Get("redirect")
+		redirectUrl := r.URL.Query().Get(c.redirectParam())
 		if redirectUrl == "" {
 			redirectUrl = c.DefaultLoginSuccessRedirect
 		}
@@ -78,11 +128,14 @@ func (c *Config) LoginHandler() http.Handler {
 			return nil
 		}
 		if rememberMe {
-			if err := c.LongLivedCookie.generateStoreAndSetTokenCookie(ctx, userID, w); err != nil {
+			fmt.Printf("remember me is on: %s, %s - %+v\n", userID, c.refreshCookiePath(), r.Form)
+			if err := c.RefreshCookie.generateStoreAndSetTokenCookie(ctx, userID, c.refreshCookiePath(), w); err != nil {
 				return srvu.Err(http.StatusInternalServerError, err)
 			}
+		} else {
+			c.RefreshCookie.deleteCookie(w, c.refreshCookiePath())
 		}
-		if err := c.ShortLivedCookie.generateStoreAndSetTokenCookie(ctx, userID, w); err != nil {
+		if err := c.SessionCookie.generateStoreAndSetTokenCookie(ctx, userID, "/", w); err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
 		http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
@@ -90,15 +143,15 @@ func (c *Config) LoginHandler() http.Handler {
 	})
 }
 
-func (c *Config) LogoutHandler() http.Handler {
-	return c.Middleware(true)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		c.ShortLivedCookie.deleteCookie(w)
-		c.LongLivedCookie.deleteCookie(w)
+func (c *Config) DeleteSessionHandler() http.Handler {
+	return c.Middleware(true, false)(srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		c.SessionCookie.deleteCookie(w, c.sessionCookiePath())
+		c.RefreshCookie.deleteCookie(w, c.refreshCookiePath())
 		if userID, err := GetUserID(ctx); err == nil {
-			c.ShortLivedCookie.Store.DeleteTokens(ctx, userID)
-			c.LongLivedCookie.Store.DeleteTokens(ctx, userID)
+			c.SessionCookie.Store.DeleteTokens(ctx, userID)
+			c.RefreshCookie.Store.DeleteTokens(ctx, userID)
 		}
-		redirectUrl := r.URL.Query().Get("redirect")
+		redirectUrl := r.URL.Query().Get(c.redirectParam())
 		if redirectUrl == "" {
 			redirectUrl = c.DefaultLogoutRedirect
 		}
@@ -107,44 +160,45 @@ func (c *Config) LogoutHandler() http.Handler {
 	}))
 }
 
-func (c *Config) Middleware(allowUnauthenticated bool) srvu.Middleware {
+func (c *Config) refreshPath() string {
+	return fmt.Sprintf("%s/refresh", c.SessionsPath)
+}
+
+func (c *Config) Middleware(allowUnauthenticated, followRedirect bool) srvu.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			alreadyAuthed, err := GetUserID(r.Context())
+			redirectUrl := r.URL.Query().Get(c.redirectParam())
 			if err == nil && alreadyAuthed != "" {
+				if followRedirect && redirectUrl != "" {
+					http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
+					return
+				}
 				h.ServeHTTP(w, r)
 				return
 			}
-			userID, err := c.ShortLivedCookie.verifyToken(r)
-			if err != nil {
-				userID, err = c.LongLivedCookie.verifyToken(r)
-				if err != nil {
-					if allowUnauthenticated {
-						ctx := setUserID(r.Context(), "")
-						h.ServeHTTP(w, r.WithContext(ctx))
-						return
+			userID, refresh, err := c.SessionCookie.verifyToken(r)
+			if err != nil && allowUnauthenticated {
+				h.ServeHTTP(w, r.WithContext(setUserID(r.Context(), "")))
+			} else if err != nil {
+				http.Redirect(w, r, fmt.Sprintf("%s?%s=%s", c.refreshPath(), c.redirectParam(), r.URL.Path), http.StatusSeeOther)
+			} else {
+				if refresh {
+					if err := c.SessionCookie.generateStoreAndSetTokenCookie(r.Context(), userID, c.refreshCookiePath(), w); err != nil {
+						srvu.GetLogger(r.Context()).Printf("failed to refresh session cookie: %v", err)
 					}
-					c.ShortLivedCookie.deleteCookie(w)
-					c.LongLivedCookie.deleteCookie(w)
-					http.Redirect(w, r, c.UnauthorizedRedirect, http.StatusSeeOther)
+				}
+				if followRedirect && redirectUrl != "" {
+					http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
 					return
 				}
-				if err := c.ShortLivedCookie.generateStoreAndSetTokenCookie(r.Context(), userID, w); err != nil {
-					http.Redirect(w, r, c.UnauthorizedRedirect, http.StatusSeeOther)
-					return
-				}
-				if err := c.LongLivedCookie.generateStoreAndSetTokenCookie(r.Context(), userID, w); err != nil {
-					http.Redirect(w, r, c.UnauthorizedRedirect, http.StatusSeeOther)
-					return
-				}
+				h.ServeHTTP(w, r.WithContext(setUserID(r.Context(), userID)))
 			}
-			ctx := setUserID(r.Context(), userID)
-			h.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func (c *CookieConfig) generateStoreAndSetTokenCookie(ctx context.Context, userID string, w http.ResponseWriter) error {
+func (c *CookieConfig) generateStoreAndSetTokenCookie(ctx context.Context, userID, path string, w http.ResponseWriter) error {
 	token, exp, err := generateToken(c.Expire, c.TokenLength)
 	if err != nil {
 		return err
@@ -155,6 +209,7 @@ func (c *CookieConfig) generateStoreAndSetTokenCookie(ctx context.Context, userI
 	http.SetCookie(w, &http.Cookie{
 		Name:     c.Name,
 		Value:    token,
+		Path:     path,
 		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
@@ -163,29 +218,38 @@ func (c *CookieConfig) generateStoreAndSetTokenCookie(ctx context.Context, userI
 	return nil
 }
 
-func (c *CookieConfig) verifyToken(r *http.Request) (string, error) {
-	cookie, err := r.Cookie(c.Name)
-	if err != nil || cookie == nil {
-		return "", fmt.Errorf("failed to get cookie from cookie: %w", err)
+func timeMin(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
 	}
-	if err := cookie.Valid(); err != nil {
-		return "", fmt.Errorf("invalid cookie: %w", err)
-	}
-	token := cookie.Value
-	userID, ok, err := c.Store.VerifyToken(r.Context(), token, time.Now())
-	if err != nil {
-		return "", fmt.Errorf("failed to verify cookie: %w", err)
-	}
-	if !ok {
-		return "", fmt.Errorf("invalid cookie")
-	}
-	return userID, nil
+	return b
 }
 
-func (c *CookieConfig) deleteCookie(w http.ResponseWriter) {
+func (c *CookieConfig) verifyToken(r *http.Request) (string, bool, error) {
+	cookie, err := r.Cookie(c.Name)
+	if err != nil || cookie == nil {
+		return "", false, fmt.Errorf("failed to get cookie from cookie: %w", err)
+	}
+	if err := cookie.Valid(); err != nil {
+		return "", false, fmt.Errorf("invalid cookie: %w", err)
+	}
+	token := cookie.Value
+	userID, exp, ok, err := c.Store.VerifyToken(r.Context(), token, time.Now())
+	if err != nil {
+		return "", false, fmt.Errorf("failed to verify cookie: %w", err)
+	}
+	if !ok {
+		return "", false, fmt.Errorf("invalid cookie")
+	}
+	exp = timeMin(cookie.Expires, exp)
+	return userID, time.Now().Add(c.RefreshMargin).After(exp), nil
+}
+
+func (c *CookieConfig) deleteCookie(w http.ResponseWriter, path string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     c.Name,
 		Value:    "",
+		Path:     path,
 		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,

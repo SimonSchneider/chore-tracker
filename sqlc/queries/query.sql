@@ -53,8 +53,16 @@ FROM chore_list cl
 WHERE clm.user_id = ?
   AND cl.id = ?;
 
+-- name: GetChoreListMembers :many
+SELECT u.id, u.display_name
+FROM user u
+         JOIN chore_list_members clm ON u.id = clm.user_id
+WHERE clm.chore_list_id = ?;
+
 -- name: GetChoreListsByUser :many
-SELECT cl.*
+SELECT cl.*,
+       (SELECT COUNT(*) FROM chore WHERE chore_list_id = cl.id)              AS chore_count,
+       (SELECT COUNT(*) FROM chore_list_members WHERE chore_list_id = cl.id) AS member_count
 FROM chore_list cl
          JOIN chore_list_members clm ON cl.id = clm.chore_list_id
 WHERE clm.user_id = ?;

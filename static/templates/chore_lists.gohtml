@@ -1,10 +1,17 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.ChoreListsView*/ -}}
-<div>
-    <ul>
-        {{ range .ChoreLists }}
-            <li>
-                <a href="/chore-lists/{{ .ID }}">{{ .Name }}</a>
-            </li>
-        {{ end }}
-    </ul>
+<div class="container">
+    {{ range .ChoreLists }}
+        <div class="chore-container">
+            <a class="name" href="/chore-lists/{{ .ID }}">{{ .Name }}</a>
+            <p class="secondary-text">
+                {{ if gt .MemberCount 1 }}{{ .MemberCount }} users{{end}}
+                {{ if and .ChoreCount (gt .MemberCount 1) }}, {{end}}
+                {{ if .ChoreCount }}{{ .ChoreCount }} chores{{ end }}</p>
+            <div class="group">
+                <a class="icon-button button" href="/chore-lists/{{.ID}}/edit">
+                    <img src="/static/public/icons/pencil.svg" alt="edit"/>
+                </a>
+            </div>
+        </div>
+    {{ end }}
 </div>

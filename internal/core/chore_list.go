@@ -7,6 +7,7 @@ import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/sqlu"
 	"github.com/SimonSchneider/goslu/srvu"
 	"io"
 	"net/http"
@@ -51,7 +52,7 @@ func ChoreListNewHandler(db *sql.DB) http.Handler {
 		if err := tx.Commit(); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("committing tx: %w", err))
 		}
-		http.Redirect(w, r, fmt.Sprintf("/chore-lists/%s", cl.ID), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/chore-lists/%s", cl.ID), http.StatusCreated)
 		return nil
 	})
 }
@@ -93,6 +94,28 @@ func ChoreListPage(db *sql.DB, view *View) http.Handler {
 	})
 }
 
+func ChoreListEditPage(db *sql.DB, view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		userID := auth.MustGetUserID(ctx)
+		id := r.PathValue("choreListID")
+		q := cdb.New(db)
+		choreList, err := q.GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{UserID: userID, ID: id})
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, err)
+		}
+		members, err := q.GetChoreListMembers(ctx, choreList.ID)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, err)
+		}
+		invites, err := q.GetInvitationsByChoreList(ctx, cdb.GetInvitationsByChoreListParams{ChoreListID: sqlu.NullString(choreList.ID), ExpiresAt: time.Now().UnixMilli()})
+		return view.ChoreListEditPage(w, r, ChoreListEditView{
+			List:    choreList,
+			Members: members,
+			Invites: invites,
+		})
+	})
+}
+
 func ChoreNewPage(view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		choreListID := r.PathValue("choreListID")
@@ -106,8 +129,11 @@ func ChoreListMux(db *sql.DB, view *View) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /chore-lists/new", ChoreListNewPage(view))
 	mux.Handle("POST /chore-lists/new", ChoreListNewHandler(db))
+	mux.Handle("POST /chore-lists/", ChoreListNewHandler(db))
 	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreNewPage(view))
-	mux.Handle("GET /chore-lists/{choreListID}/{$}", ChoreListPage(db, view))
+	mux.Handle("GET /chore-lists/{choreListID}/edit", ChoreListEditPage(db, view))
+	mux.Handle("GET /chore-lists/{choreListID}", ChoreListPage(db, view))
+	mux.Handle("GET /chore-lists/{choreListID}/", ChoreListPage(db, view))
 	mux.Handle("GET /chore-lists/{$}", ChoreListsPage(db, view))
 	return mux
 }

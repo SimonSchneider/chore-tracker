@@ -15,7 +15,7 @@ on keyup[key is 'Escape'] trigger closeModal
                 {{else}}
                     <h2>Create Chore</h2>
                 {{end}}
-                <button type="reset" class="icon-button" aria-label="Close"
+                <button class="icon-button reset" aria-label="Close"
                         _="on click trigger closeModal">
                     <img src="/static/public/icons/x.svg" alt="close">
                 </button>
@@ -34,7 +34,7 @@ on keyup[key is 'Escape'] trigger closeModal
             </div>
             <footer class="modal-footer">
                 {{if .ID}}
-                    <button type="reset" aria-label="Delete" hx-delete="/chores/{{.ID}}"
+                    <button class="reset" aria-label="Delete" hx-delete="/chores/{{.ID}}"
                             hx-target="#chore-{{.ID}}" hx-swap="delete">
                         Delete
                     </button>

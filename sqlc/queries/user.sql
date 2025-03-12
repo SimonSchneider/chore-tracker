@@ -5,12 +5,13 @@ WHERE id = ?;
 
 -- name: CreateUser :one
 INSERT INTO user
-    (id, created_at, updated_at)
-VALUES (?, ?, ?) RETURNING *;
+    (id, display_name, created_at, updated_at)
+VALUES (?, ?, ?, ?)
+RETURNING *;
 
 -- name: CreatePasswordAuth :exec
 INSERT INTO password_auth
-(user_id, username, hash)
+    (user_id, username, hash)
 VALUES (?, ?, ?);
 
 -- name: GetPasswordAuthByUsername :one

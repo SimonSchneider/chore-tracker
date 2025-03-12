@@ -12,9 +12,10 @@ CREATE TABLE IF NOT EXISTS invitation
 
 CREATE TABLE IF NOT EXISTS user
 (
-    id         TEXT    NOT NULL PRIMARY KEY,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    id           TEXT    NOT NULL PRIMARY KEY,
+    display_name TEXT    NOT NULL,
+    created_at   INTEGER NOT NULL,
+    updated_at   INTEGER NOT NULL
 );
 
 CREATE TABLE password_auth

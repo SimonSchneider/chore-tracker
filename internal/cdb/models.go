@@ -60,7 +60,8 @@ type Token struct {
 }
 
 type User struct {
-	ID        string
-	CreatedAt int64
-	UpdatedAt int64
+	ID          string
+	DisplayName string
+	CreatedAt   int64
+	UpdatedAt   int64
 }

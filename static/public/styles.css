@@ -4,8 +4,13 @@ body {
     font-family: Arial, sans-serif;
 }
 
-button {
+button, .button {
     all: unset;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
 }
 
 main {
@@ -55,11 +60,7 @@ ul {
     list-style-type: none;
 }
 
-.icon-button {
-    padding: 3px;
-}
-
-button, a.icon-button {
+button, .button {
     padding: 0.5rem 1rem;
     margin: 0;
     flex-grow: 0;
@@ -70,17 +71,29 @@ button, a.icon-button {
     border-radius: 0.5rem;
 }
 
-button[type="reset"] {
+button:disabled {
     background-color: var(--color-secondary);
 }
 
-button:hover, button:focus {
+button:not([disabled]) {
+    cursor: pointer;
+}
+
+.icon-button {
+    padding: 3px;
+}
+
+.reset {
+    background-color: var(--color-secondary);
+}
+
+button:not([disabled]):hover, button:not([disabled]):focus, .button:hover, .button:focus {
     background-color: var(--color-highlight);
     outline: none;
     cursor: pointer;
 }
 
-button:active {
+button:not([disabled]):active, .button:active {
     background-color: var(--color-bold);
 }
 
@@ -150,18 +163,18 @@ hr {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: center;
     padding: 0.3rem 0.5rem;
     background-color: var(--color-accent);
     margin: 0.5rem 0.5rem;
     border-radius: 0.5rem;
+    align-items: stretch;
 }
 
-.chore-container > p {
+.chore-container > p, a {
     margin: 0;
 }
 
-.chore-container p {
+.chore-container p, a {
     flex-grow: 1;
     margin: 0;
     padding: 0 1rem
@@ -169,6 +182,7 @@ hr {
 
 .chore-container .name {
     flex-grow: 8;
+    align-content: center;
 }
 
 @media (min-width: 550px) {
@@ -238,6 +252,27 @@ body:has(dialog[open]) {
     /*position: fixed;*/
 }
 
+summary::marker {
+    display: none;
+}
+
+summary::before {
+    content: "";
+    display: inline-block;
+    width: 16px; /* Adjust as needed */
+    height: 16px;
+    background-image: url("/static/public/icons/chevron-right.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    /*content: "▶";*/
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+details[open] summary::before {
+    transform: rotate(90deg);
+}
+
 #modal > .modal-underlay {
     /* underlay takes up the entire viewport. This is only
     required if you want to click to dismiss the popup */
@@ -289,11 +324,25 @@ article {
     background-color: var(--color-background);
 }
 
-.modal-header, .modal-footer {
+.modal-header, .modal-sub-header, .modal-footer {
     display: flex;
+    align-items: center;
+    flex-direction: row;
     justify-content: space-between;
     margin: 0;
-    padding: 0.5rem 0 0;
+}
+
+.modal-header {
+    padding: 0.5rem 0 0 0;
+}
+
+.modal-footer {
+    padding: 0 0 0.5rem 0;
+}
+
+.modal-sub-header {
+    margin: 0;
+    padding: 0;
 }
 
 .modal-footer:has(> :only-child) {
@@ -304,16 +353,22 @@ article {
     /*outline: 1px solid var(--color-bold);*/
 }
 
-.modal-header > h2 {
+.modal-header > h2, h3 {
     margin: 0;
     padding: 0;
 }
 
 .modal-body {
-    margin: 1rem 0 0;
+    margin: 1.5rem 0 1.5rem 0;
     display: flex;
     flex-direction: column;
     padding: 0;
+    gap: 1.5rem
+}
+
+.modal-body > hr {
+    margin: 0;
+    padding: 0
 }
 
 fieldset {

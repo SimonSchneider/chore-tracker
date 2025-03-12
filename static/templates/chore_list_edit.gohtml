@@ -1,0 +1,65 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
+<div class="container">
+    <article>
+        <form>
+            <header class="modal-header">
+                <h2>Edit ChoreList</h2>
+                <a href="/chore-lists/" class="icon-button button reset" aria-label="Close">
+                    <img src="/static/public/icons/x.svg" alt="close">
+                </a>
+            </header>
+            <div class="modal-body">
+                <fieldset role="group">
+                    <input autofocus name="name" style="flex-grow: 8" aria-label="chore list name"
+                           value="{{ .List.Name }}" type="text"
+                           placeholder="name"/>
+                </fieldset>
+                <details open>
+                    <summary class="modal-sub-header"><h3>Members</h3></summary>
+                    <div class="container">
+                        {{ range .Members }}
+                            <div class="chore-container">
+                                <p class="name">{{ .DisplayName }}</p>
+                                <button class="icon-button" aria-label="remove">
+                                    <img src="/static/public/icons/x.svg" alt="remove">
+                                </button>
+                            </div>
+                        {{ end }}
+                    </div>
+                </details>
+                <details open>
+                    <summary class="modal-sub-header">
+                        <h3>Invitations</h3>
+                        <a class="button icon-button" href="/" aria-label="Invite">
+                            <img src="/static/public/icons/plus.svg" alt="invite">
+                        </a>
+                    </summary>
+                    {{ if .Invites }}
+                        <div class="container">
+                            {{ range .Invites }}
+                                <div class="chore-container">
+                                    <a class="name" href="/invites/{{ .ID }}">{{ .ID }}</a>
+                                    <button class="icon-button" aria-label="delete">
+                                        <img src="/static/public/icons/x.svg" alt="delete">
+                                    </button>
+                                </div>
+                            {{ end }}
+                        </div>
+                    {{ else }}
+                        <p class="details-empty">
+                            No invites created
+                        </p>
+                    {{ end }}
+                </details>
+            </div>
+            <footer class="modal-footer">
+                <button class="reset">
+                    Delete
+                </button>
+                <button type="submit">
+                    Save
+                </button>
+            </footer>
+        </form>
+    </article>
+</div>

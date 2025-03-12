@@ -11,7 +11,7 @@ import (
 
 const createPasswordAuth = `-- name: CreatePasswordAuth :exec
 INSERT INTO password_auth
-(user_id, username, hash)
+    (user_id, username, hash)
 VALUES (?, ?, ?)
 `
 
@@ -28,20 +28,32 @@ func (q *Queries) CreatePasswordAuth(ctx context.Context, arg CreatePasswordAuth
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO user
-    (id, created_at, updated_at)
-VALUES (?, ?, ?) RETURNING id, created_at, updated_at
+    (id, display_name, created_at, updated_at)
+VALUES (?, ?, ?, ?)
+RETURNING id, display_name, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID        string
-	CreatedAt int64
-	UpdatedAt int64
+	ID          string
+	DisplayName string
+	CreatedAt   int64
+	UpdatedAt   int64
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.CreatedAt, arg.UpdatedAt)
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.ID,
+		arg.DisplayName,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
 	var i User
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.DisplayName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
@@ -88,7 +100,7 @@ func (q *Queries) GetPasswordAuthsByUser(ctx context.Context, userID string) ([]
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at
+SELECT id, display_name, created_at, updated_at
 FROM user
 WHERE id = ?
 `
@@ -96,6 +108,11 @@ WHERE id = ?
 func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.DisplayName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
