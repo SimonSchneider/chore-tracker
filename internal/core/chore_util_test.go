@@ -70,7 +70,7 @@ func Setup() (context.Context, *Client, context.CancelFunc) {
 	view := core.NewView(tplProv)
 	tokenStore := auth.NewInMemoryTokenStore()
 	authCfg := auth.Config{
-		Provider:                    core.NewAuthProvider(db, view),
+		Provider:                    core.NewAuthProvider(db),
 		UnauthorizedRedirect:        "/login",
 		DefaultLogoutRedirect:       "/login",
 		DefaultLoginSuccessRedirect: "/",

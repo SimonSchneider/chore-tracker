@@ -12,12 +12,11 @@ import (
 )
 
 type AuthProvider struct {
-	db   *sql.DB
-	view *View
+	db *sql.DB
 }
 
-func NewAuthProvider(db *sql.DB, view *View) *AuthProvider {
-	return &AuthProvider{db: db, view: view}
+func NewAuthProvider(db *sql.DB) *AuthProvider {
+	return &AuthProvider{db: db}
 }
 
 func (a *AuthProvider) AuthenticateUser(ctx context.Context, r *http.Request) (string, error) {

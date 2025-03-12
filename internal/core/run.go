@@ -64,7 +64,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		return fmt.Errorf("sub static: %w", err)
 	}
 	authConfig := auth.Config{
-		Provider:                    &AuthProvider{db: db, view: view},
+		Provider:                    &AuthProvider{db: db},
 		RedirectParam:               "redirect",
 		UnauthorizedRedirect:        "/login",
 		DefaultLogoutRedirect:       "/login",
@@ -72,14 +72,14 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		DefaultLoginSuccessRedirect: "/",
 		SessionsPath:                "/sessions/",
 		SessionCookie: auth.CookieConfig{
-			Name:          "session",
-			Expire:        5 * time.Second,
-			RefreshMargin: 2 * time.Second,
+			Name:          "chore_session",
+			Expire:        30 * time.Minute,
+			RefreshMargin: 5 * time.Minute,
 			TokenLength:   32,
 			Store:         auth.NewInMemoryTokenStore(),
 		},
 		RefreshCookie: auth.CookieConfig{
-			Name:        "refresh_session",
+			Name:        "chore_refresh_session",
 			Expire:      24 * time.Hour * 30,
 			TokenLength: 102,
 			Store:       &DBTokenStore{DB: db},

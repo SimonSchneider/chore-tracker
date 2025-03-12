@@ -10,16 +10,6 @@ import (
 	"time"
 )
 
-/*
-- not authed -> redirect to login page with redirect URL set to current page
-- authedMW -> check cookie and either resolve or redirect to login path set userID in context
-- in app - loginPage -> display login form which uses POST /login with userID and password and remember me
--x POST login -> check userID and password, if correct set session cookie and redirect to redirect url provided or default
--x POST logout -> clear session cookie and redirect to default
-
-- need to support invites and generating a password for invited users
-*/
-
 type Provider interface {
 	AuthenticateUser(ctx context.Context, r *http.Request) (userID string, err error)
 }
@@ -112,23 +102,24 @@ func (c *Config) redirectParam() string {
 	return c.RedirectParam
 }
 
+func (c *Config) getRedirectURL(r *http.Request, fallback string) string {
+	red := r.URL.Query().Get(c.redirectParam())
+	if red == "" {
+		return fallback
+	}
+	return red
+}
+
 func (c *Config) CreateSessionHandler() http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		rememberMe := r.FormValue("rememberMe") == "on"
-		redirectUrl := r.URL.Query().Get(c.redirectParam())
-		if redirectUrl == "" {
-			redirectUrl = c.DefaultLoginSuccessRedirect
-		}
+		redirectUrl := c.getRedirectURL(r, c.DefaultLoginSuccessRedirect)
 		userID, err := c.Provider.AuthenticateUser(ctx, r)
-		if err != nil {
-			srvu.GetLogger(ctx).Printf("failed to authenticate user: %v", err)
-		}
-		if userID == "" {
+		if err != nil || userID == "" {
 			http.Redirect(w, r, c.LoginFailedRedirect, http.StatusSeeOther)
 			return nil
 		}
 		if rememberMe {
-			fmt.Printf("remember me is on: %s, %s - %+v\n", userID, c.refreshCookiePath(), r.Form)
 			if err := c.RefreshCookie.generateStoreAndSetTokenCookie(ctx, userID, c.refreshCookiePath(), w); err != nil {
 				return srvu.Err(http.StatusInternalServerError, err)
 			}
@@ -151,10 +142,7 @@ func (c *Config) DeleteSessionHandler() http.Handler {
 			c.SessionCookie.Store.DeleteTokens(ctx, userID)
 			c.RefreshCookie.Store.DeleteTokens(ctx, userID)
 		}
-		redirectUrl := r.URL.Query().Get(c.redirectParam())
-		if redirectUrl == "" {
-			redirectUrl = c.DefaultLogoutRedirect
-		}
+		redirectUrl := c.getRedirectURL(r, c.DefaultLogoutRedirect)
 		http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
 		return nil
 	}))
@@ -168,7 +156,7 @@ func (c *Config) Middleware(allowUnauthenticated, followRedirect bool) srvu.Midd
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			alreadyAuthed, err := GetUserID(r.Context())
-			redirectUrl := r.URL.Query().Get(c.redirectParam())
+			redirectUrl := c.getRedirectURL(r, "")
 			if err == nil && alreadyAuthed != "" {
 				if followRedirect && redirectUrl != "" {
 					http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
