@@ -35,6 +35,9 @@ type ChoreListEditView struct {
 }
 
 func (v *View) ChoreListEditPage(w io.Writer, r *http.Request, d ChoreListEditView) error {
+	if r.Header.Get("HX-Request") == "true" {
+		return v.p.ExecuteTemplate(w, "chore_list_edit.modal.gohtml", d)
+	}
 	return v.p.ExecuteTemplate(w, "chore_list_edit.page.gohtml", d)
 }
 

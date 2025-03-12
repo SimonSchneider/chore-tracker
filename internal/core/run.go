@@ -31,6 +31,7 @@ func LoginPage(view *View) http.Handler {
 func Mux(db *sql.DB, view *View, authConfig auth.Config) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /login", srvu.With(LoginPage(view), authConfig.Middleware(true, true)))
+	mux.Handle("POST /logout", authConfig.DeleteSessionHandler())
 	mux.Handle(authConfig.SessionsPath, authConfig.SessionHandler())
 	mux.Handle("GET /settings", srvu.With(SettingsPage(view, db), authConfig.Middleware(false, false)))
 

@@ -52,7 +52,7 @@ func ChoreListNewHandler(db *sql.DB) http.Handler {
 		if err := tx.Commit(); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("committing tx: %w", err))
 		}
-		http.Redirect(w, r, fmt.Sprintf("/chore-lists/%s", cl.ID), http.StatusCreated)
+		http.Redirect(w, r, fmt.Sprintf("/chore-lists/%s", cl.ID), http.StatusSeeOther)
 		return nil
 	})
 }
@@ -128,7 +128,6 @@ func ChoreNewPage(view *View) http.Handler {
 func ChoreListMux(db *sql.DB, view *View) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /chore-lists/new", ChoreListNewPage(view))
-	mux.Handle("POST /chore-lists/new", ChoreListNewHandler(db))
 	mux.Handle("POST /chore-lists/", ChoreListNewHandler(db))
 	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreNewPage(view))
 	mux.Handle("GET /chore-lists/{choreListID}/edit", ChoreListEditPage(db, view))

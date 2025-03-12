@@ -80,7 +80,19 @@ button:not([disabled]) {
 }
 
 .icon-button {
-    padding: 3px;
+    padding: var(--button-padding);
+}
+
+.adorned-button {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    padding: var(--button-padding) 0.5rem;
+    margin: 0;
+    background-color: var(--color-primary);
+    color: black;
+    border-radius: 0.5rem;
 }
 
 .reset {
@@ -204,6 +216,7 @@ hr {
     --color-tertiary: #999;
     --color-highlight: lightpink;
     --color-bold: hotpink;
+    --button-padding: 3px;
 }
 
 @media (prefers-color-scheme: dark) {

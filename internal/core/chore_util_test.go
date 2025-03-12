@@ -199,7 +199,7 @@ func (r *ChoreReq) DoAndFollow(status int) (*http.Response, error) {
 }
 
 func NewChoreList(ctx context.Context, client *Client, token *ClientToken, formVals map[string]string) (*core.ChoreListView, error) {
-	_, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chore-lists/", formVals).DoAndFollow(http.StatusCreated)
+	_, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chore-lists/", formVals).DoAndFollow(http.StatusSeeOther)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func NewChoreList(ctx context.Context, client *Client, token *ClientToken, formV
 }
 
 func NewChore(ctx context.Context, client *Client, token *ClientToken, formVals map[string]string) (*core.Chore, error) {
-	if _, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chores/", formVals).DoAndFollow(http.StatusCreated); err != nil {
+	if _, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chores/", formVals).DoAndFollow(http.StatusSeeOther); err != nil {
 		return nil, err
 	}
 	chore := GetTpl[*core.Chore](client.tmpl, "chore-element.gohtml")

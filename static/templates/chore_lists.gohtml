@@ -8,7 +8,8 @@
                 {{ if and .ChoreCount (gt .MemberCount 1) }}, {{end}}
                 {{ if .ChoreCount }}{{ .ChoreCount }} chores{{ end }}</p>
             <div class="group">
-                <a class="icon-button button" href="/chore-lists/{{.ID}}/edit">
+                <a class="icon-button button" href="/chore-lists/{{.ID}}/edit" hx-get="/chore-lists/{{.ID}}/edit"
+                   hx-target="body" hx-swap="beforeend">
                     <img src="/static/public/icons/pencil.svg" alt="edit"/>
                 </a>
             </div>

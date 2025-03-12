@@ -13,6 +13,10 @@
     <ul class="nav-right">
         <li>
             <div class="group">
+                <a class="button icon-button" href="/chore-lists/{{.ID}}/edit" hx-get="/chore-lists/{{.ID}}/edit"
+                   hx-target="body" hx-swap="beforeend">
+                    <img src="/static/public/icons/pencil.svg" alt="edit"/>
+                </a>
                 <a href="/settings" class="icon-button button">
                     <img alt="settings" src="/static/public/icons/settings.svg"/>
                 </a>
