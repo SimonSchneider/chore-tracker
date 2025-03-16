@@ -186,7 +186,7 @@ func ChoreMux(db *sql.DB, view *View) http.Handler {
 	mux.Handle("POST /chores/{id}/expedite", ChoreExpediteHandler(db, view))
 	mux.Handle("POST /chores/{$}", ChoreAddHandler(db, view))
 	mux.Handle("GET /chores/{id}", ChorePage(db, view))
-	mux.Handle("PUT /chores/{id}", ChoreUpdateHandler(db, view))
+	mux.Handle("POST /chores/{id}", ChoreUpdateHandler(db, view))
 	mux.Handle("DELETE /chores/{id}", ChoreDeleteHandler(db))
 	return mux
 }

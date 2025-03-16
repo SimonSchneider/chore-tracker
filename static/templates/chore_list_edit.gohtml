@@ -1,6 +1,7 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
-<article>
-    <form method="PUT" action="/chore-lists/{{ .List.ID }}">
+<article id="article">
+    <form method="post" action="/chore-lists/{{ .List.ID }}" hx-boost="true" hx-disinherit="hx-boost"
+          hx-push-url="false">
         <header class="modal-header">
             <h2>Edit ChoreList</h2>
             <a href="/chore-lists/"
@@ -33,9 +34,14 @@
             <details open>
                 <summary class="modal-sub-header">
                     <h3>Invitations</h3>
-                    <a class="button icon-button" href="/invites/create" aria-label="Create Invite">
+                    <button class="icon-button" aria-label="Create Invite"
+                            hx-post="/chore-lists/{{ .List.ID }}/invites/"
+                            hx-target="#article" hx-swap="outerHTML">
                         <img src="/static/public/icons/plus.svg" alt="invite">
-                    </a>
+                    </button>
+                    {{/*                    <a class="button icon-button" href="/invites/create" aria-label="Create Invite">*/}}
+                    {{/*                        <img src="/static/public/icons/plus.svg" alt="invite">*/}}
+                    {{/*                    </a>*/}}
                 </summary>
                 {{ if .Invites }}
                     <div class="container">

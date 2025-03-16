@@ -249,6 +249,7 @@ SELECT cl.id, cl.created_at, cl.updated_at, cl.name,
 FROM chore_list cl
          JOIN chore_list_members clm ON cl.id = clm.chore_list_id
 WHERE clm.user_id = ?
+ORDER BY cl.name
 `
 
 type GetChoreListsByUserRow struct {
@@ -371,6 +372,39 @@ func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) (Chore
 		&i.CreatedAt,
 		&i.ChoreListID,
 		&i.CreatedBy,
+	)
+	return i, err
+}
+
+const updateChoreList = `-- name: UpdateChoreList :one
+UPDATE chore_list
+SET name       = ?,
+    updated_at = ?
+WHERE id = ?
+  AND id IN (SELECT chore_list_id FROM chore_list_members WHERE user_id = ?)
+RETURNING id, created_at, updated_at, name
+`
+
+type UpdateChoreListParams struct {
+	Name      string
+	UpdatedAt int64
+	ID        string
+	UserID    string
+}
+
+func (q *Queries) UpdateChoreList(ctx context.Context, arg UpdateChoreListParams) (ChoreList, error) {
+	row := q.db.QueryRowContext(ctx, updateChoreList,
+		arg.Name,
+		arg.UpdatedAt,
+		arg.ID,
+		arg.UserID,
+	)
+	var i ChoreList
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
 	)
 	return i, err
 }

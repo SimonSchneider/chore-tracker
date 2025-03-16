@@ -29,14 +29,15 @@ func LoginPage(view *View) http.Handler {
 }
 
 func Mux(db *sql.DB, view *View, authConfig auth.Config) http.Handler {
+	inviteStore := &InviteStore{db: db, view: view}
 	mux := http.NewServeMux()
 	mux.Handle("GET /login", srvu.With(LoginPage(view), authConfig.Middleware(true, true)))
 	mux.Handle("POST /logout", authConfig.DeleteSessionHandler())
 	mux.Handle(authConfig.SessionsPath, authConfig.SessionHandler())
 	mux.Handle("GET /settings", srvu.With(SettingsPage(view, db), authConfig.Middleware(false, false)))
 
-	HandleNested(mux, "/invites/", auth.InviteHandler(&InviteStore{db: db, view: view}, authConfig))
-	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view), authConfig.Middleware(false, false)))
+	HandleNested(mux, "/invites/", auth.InviteHandler(inviteStore, authConfig))
+	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view, inviteStore), authConfig.Middleware(false, false)))
 	mux.Handle("/chores/", srvu.With(ChoreMux(db, view), authConfig.Middleware(false, false)))
 	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
 	return mux
@@ -60,7 +61,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		Watch:        cfg.Watch,
 		TmplPatterns: []string{"templates/*.gohtml"},
 	})
-	view := &View{p: tmplProv}
+	view := NewView(tmplProv)
 	if err != nil {
 		return fmt.Errorf("sub static: %w", err)
 	}

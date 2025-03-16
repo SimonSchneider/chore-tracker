@@ -5,26 +5,55 @@ import (
 	"github.com/SimonSchneider/goslu/templ"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
+type RequestDetails struct {
+	req *http.Request
+}
+
+func (r *RequestDetails) BackPath() string {
+	refURI, err := url.Parse(r.req.Header.Get("Referer"))
+	if err != nil {
+		return "/"
+	} else {
+		return refURI.Path
+	}
+}
+
+type HtmlTemplateProvider struct {
+	templ.TemplateProvider
+}
+
+func (p *HtmlTemplateProvider) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
+	if rw, ok := w.(http.ResponseWriter); ok {
+		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+		rw.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	}
+	return p.TemplateProvider.ExecuteTemplate(w, name, data)
+}
+
 type View struct {
-	p templ.TemplateProvider
+	p *HtmlTemplateProvider
 }
 
 func NewView(p templ.TemplateProvider) *View {
-	return &View{p: p}
+	return &View{p: &HtmlTemplateProvider{TemplateProvider: p}}
 }
 
 type ChoreListsView struct {
 	ChoreLists []cdb.GetChoreListsByUserRow
 }
 
-func (v *View) ChoreListsPage(w io.Writer, r *http.Request, d ChoreListsView) error {
+func (v *View) ChoreListsPage(w http.ResponseWriter, r *http.Request, d ChoreListsView) error {
+	if r.Header.Get("HX-Request") == "true" {
+		return v.p.ExecuteTemplate(w, "chore_lists.gohtml", d)
+	}
 	return v.p.ExecuteTemplate(w, "chore_lists.page.gohtml", d)
 }
 
-func (v *View) ChoreListNewPage(w io.Writer, r *http.Request) error {
+func (v *View) ChoreListNewPage(w http.ResponseWriter, r *http.Request) error {
 	return v.p.ExecuteTemplate(w, "chore-list-new.page.gohtml", nil)
 }
 
@@ -34,8 +63,11 @@ type ChoreListEditView struct {
 	Invites []cdb.Invitation
 }
 
-func (v *View) ChoreListEditPage(w io.Writer, r *http.Request, d ChoreListEditView) error {
+func (v *View) ChoreListEditPage(w http.ResponseWriter, r *http.Request, d ChoreListEditView) error {
 	if r.Header.Get("HX-Request") == "true" {
+		if r.Header.Get("HX-Target") == "article" {
+			return v.p.ExecuteTemplate(w, "chore_list_edit.gohtml", d)
+		}
 		return v.p.ExecuteTemplate(w, "chore_list_edit.modal.gohtml", d)
 	}
 	return v.p.ExecuteTemplate(w, "chore_list_edit.page.gohtml", d)
@@ -47,25 +79,27 @@ type ChoreListView struct {
 	Chores  *ListView
 }
 
-func (v *View) ChoreListPage(w io.Writer, r *http.Request, d ChoreListView) error {
+func (v *View) ChoreListPage(w http.ResponseWriter, r *http.Request, d ChoreListView) error {
 	if r.Header.Get("HX-Request") == "true" {
 		return v.p.ExecuteTemplate(w, "chore_list.gohtml", d)
 	}
 	return v.p.ExecuteTemplate(w, "chore_list.page.gohtml", d)
 }
 
-func (v *View) ChoreModal(w io.Writer, r *http.Request, d *Chore) error {
+func (v *View) ChoreModal(w http.ResponseWriter, r *http.Request, d *Chore) error {
 	return v.p.ExecuteTemplate(w, "chore-modal.gohtml", d)
 }
 
 type SettingsView struct {
+	RequestDetails *RequestDetails
 	UserID         string
 	Usernames      []string
 	ChoreLists     []cdb.GetChoreListsByUserRow
 	CreatedInvites []cdb.GetInvitationsByCreatorRow
 }
 
-func (v *View) SettingsPage(w io.Writer, r *http.Request, d SettingsView) error {
+func (v *View) SettingsPage(w http.ResponseWriter, r *http.Request, d SettingsView) error {
+	d.RequestDetails = &RequestDetails{req: r}
 	return v.p.ExecuteTemplate(w, "settings.page.gohtml", d)
 }
 
@@ -73,7 +107,7 @@ type InviteCreateView struct {
 	ChoreLists []cdb.GetChoreListsByUserRow
 }
 
-func (v *View) InviteCreate(w io.Writer, r *http.Request, d InviteCreateView) error {
+func (v *View) InviteCreate(w http.ResponseWriter, r *http.Request, d InviteCreateView) error {
 	return v.p.ExecuteTemplate(w, "invite_create.gohtml", d)
 }
 
@@ -82,7 +116,7 @@ type InviteView struct {
 	ChoreListName string
 }
 
-func (v *View) InvitePage(w io.Writer, r *http.Request, d InviteView) error {
+func (v *View) InvitePage(w http.ResponseWriter, r *http.Request, d InviteView) error {
 	return v.p.ExecuteTemplate(w, "invite.gohtml", d)
 }
 
@@ -93,14 +127,14 @@ type InviteAcceptView struct {
 	ExistingUser  bool
 }
 
-func (v *View) InviteAcceptPage(w io.Writer, r *http.Request, d InviteAcceptView) error {
+func (v *View) InviteAcceptPage(w http.ResponseWriter, r *http.Request, d InviteAcceptView) error {
 	return v.p.ExecuteTemplate(w, "invite_accept.page.gohtml", d)
 }
 
-func (v *View) ChoreElement(w io.Writer, r *http.Request, d *Chore) error {
+func (v *View) ChoreElement(w http.ResponseWriter, r *http.Request, d *Chore) error {
 	return v.p.ExecuteTemplate(w, "chore-element.gohtml", d)
 }
 
-func (v *View) LoginPage(w io.Writer, r *http.Request) error {
+func (v *View) LoginPage(w http.ResponseWriter, r *http.Request) error {
 	return v.p.ExecuteTemplate(w, "login.page.gohtml", nil)
 }

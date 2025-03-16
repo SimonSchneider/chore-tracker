@@ -1,6 +1,12 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.SettingsView*/ -}}
 <nav class="nav">
     <ul class="nav-left">
         <li>
+            <div class="group">
+                <a href="{{ .RequestDetails.BackPath }}" class="icon-button button">
+                    <img alt="back" src="/static/public/icons/arrow-left.svg"/>
+                </a>
+            </div>
         </li>
     </ul>
     <h1>Settings</h1>

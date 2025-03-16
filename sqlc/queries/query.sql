@@ -65,12 +65,21 @@ SELECT cl.*,
        (SELECT COUNT(*) FROM chore_list_members WHERE chore_list_id = cl.id) AS member_count
 FROM chore_list cl
          JOIN chore_list_members clm ON cl.id = clm.chore_list_id
-WHERE clm.user_id = ?;
+WHERE clm.user_id = ?
+ORDER BY cl.name;
 
 -- name: CreateChoreList :one
 INSERT INTO chore_list
     (id, name, created_at, updated_at)
 VALUES (?, ?, ?, ?)
+RETURNING *;
+
+-- name: UpdateChoreList :one
+UPDATE chore_list
+SET name       = ?,
+    updated_at = ?
+WHERE id = ?
+  AND id IN (SELECT chore_list_id FROM chore_list_members WHERE user_id = ?)
 RETURNING *;
 
 -- name: AddUserToChoreList :exec

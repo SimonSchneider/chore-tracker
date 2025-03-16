@@ -1,4 +1,4 @@
-{{- /*gotype: github.com/SimonSchneider/chore-tracker/cdb.ChoreList*/ -}}
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
 <nav class="nav">
     <ul class="nav-left">
         <li>
@@ -9,18 +9,20 @@
             </div>
         </li>
     </ul>
-    <h1>{{ .Name }}</h1>
+    <h1>{{ .List.Name }}</h1>
     <ul class="nav-right">
         <li>
             <div class="group">
-                <a class="button icon-button" href="/chore-lists/{{.ID}}/edit" hx-get="/chore-lists/{{.ID}}/edit"
+                <a class="button icon-button" href="/chore-lists/{{.List.ID}}/edit"
+                   hx-get="/chore-lists/{{.List.ID}}/edit"
                    hx-target="body" hx-swap="beforeend">
                     <img src="/static/public/icons/pencil.svg" alt="edit"/>
                 </a>
                 <a href="/settings" class="icon-button button">
                     <img alt="settings" src="/static/public/icons/settings.svg"/>
                 </a>
-                <button class="icon-button" hx-get="chores/new" hx-target="body" hx-swap="beforeend">
+                <button class="icon-button" hx-get="/chore-lists/{{.List.ID}}/chores/new" hx-target="body"
+                        hx-swap="beforeend">
                     <img alt="create chore" src="/static/public/icons/plus.svg"/>
                 </button>
             </div>

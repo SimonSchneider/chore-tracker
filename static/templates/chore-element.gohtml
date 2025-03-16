@@ -2,19 +2,19 @@
 <div class="chore-container" id="chore-{{.ID}}">
     <div class="group">
         <button class="icon-button" hx-post="/chores/{{.ID}}/complete"
-                hx-target="#chore-list-container"
+                hx-target="body"
                 hx-swap="outerHTML">
             <img src="/static/public/icons/check.svg" alt="complete">
         </button>
         {{ if gt .DurationToNext 0 }}
             <button class="icon-button" hx-post="/chores/{{.ID}}/expedite"
-                    hx-target="#chore-list-container"
+                    hx-target="body"
                     hx-swap="outerHTML">
                 <img src="/static/public/icons/arrow-up.svg" alt="delete">
             </button>
         {{ else }}
             <button class="icon-button" hx-post="/chores/{{.ID}}/snooze"
-                    hx-target="#chore-list-container"
+                    hx-target="body"
                     hx-swap="outerHTML">
                 <img src="/static/public/icons/zzz.svg" alt="delete">
             </button>

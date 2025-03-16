@@ -9,8 +9,8 @@ import (
 	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/sqlu"
 	"github.com/SimonSchneider/goslu/srvu"
-	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -22,7 +22,7 @@ func ChoreListNewPage(view *View) http.Handler {
 
 func ChoreListNewHandler(db *sql.DB) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userId := auth.MustGetUserID(ctx)
+		userID := auth.MustGetUserID(ctx)
 		name := r.FormValue("name")
 		if name == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing name"))
@@ -44,7 +44,7 @@ func ChoreListNewHandler(db *sql.DB) http.Handler {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("creating chore list: %w", err))
 		}
 		if err := q.AddUserToChoreList(ctx, cdb.AddUserToChoreListParams{
-			UserID:      userId,
+			UserID:      userID,
 			ChoreListID: cl.ID,
 		}); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("adding user to chore list: %w", err))
@@ -57,20 +57,56 @@ func ChoreListNewHandler(db *sql.DB) http.Handler {
 	})
 }
 
-func ChoreListsPage(db *sql.DB, view *View) http.Handler {
+func ChoreListUpdateHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		userID := auth.MustGetUserID(ctx)
-		choreLists, err := cdb.New(db).GetChoreListsByUser(ctx, userID)
+		name := r.FormValue("name")
+		id := r.PathValue("id")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		if name == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing name"))
+		}
+		q := cdb.New(db)
+		_, err := q.UpdateChoreList(ctx, cdb.UpdateChoreListParams{ID: id, UpdatedAt: time.Now().UnixMilli(), Name: name, UserID: userID})
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		return view.ChoreListsPage(w, r, ChoreListsView{
-			ChoreLists: choreLists,
-		})
+		if r.Header.Get("HX-Request") == "true" {
+			ref, err := url.Parse(r.Header.Get("Referer"))
+			if err == nil {
+				if ref.Path == fmt.Sprintf("/chore-lists/%s", id) {
+					return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, id)
+				} else if ref.Path == "/chore-lists/" {
+					http.Redirect(w, r, "/chore-lists/", http.StatusSeeOther)
+					return nil
+				}
+			}
+		}
+		http.Redirect(w, r, fmt.Sprintf("/chore-lists/%s", id), http.StatusSeeOther)
+		return nil
 	})
 }
 
-func ChoreListRender(ctx context.Context, db *sql.DB, view *View, w io.Writer, r *http.Request, today date.Date, userID, choreListID string) error {
+func ChoreListsRender(ctx context.Context, db *sql.DB, view *View, w http.ResponseWriter, r *http.Request, userID string) error {
+	choreLists, err := cdb.New(db).GetChoreListsByUser(ctx, userID)
+	if err != nil {
+		return srvu.Err(http.StatusInternalServerError, err)
+	}
+	return view.ChoreListsPage(w, r, ChoreListsView{
+		ChoreLists: choreLists,
+	})
+}
+
+func ChoreListsPage(db *sql.DB, view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		userID := auth.MustGetUserID(ctx)
+		return ChoreListsRender(ctx, db, view, w, r, userID)
+	})
+}
+
+func ChoreListRender(ctx context.Context, db *sql.DB, view *View, w http.ResponseWriter, r *http.Request, today date.Date, userID, choreListID string) error {
 	choreList, err := cdb.New(db).GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{ID: choreListID, UserID: userID})
 	if err != nil {
 		return srvu.Err(http.StatusInternalServerError, err)
@@ -125,10 +161,28 @@ func ChoreNewPage(view *View) http.Handler {
 	})
 }
 
-func ChoreListMux(db *sql.DB, view *View) *http.ServeMux {
+func ChoreListCreateInviteHandler(db *sql.DB, view *View, inviteStore *InviteStore) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		userID := auth.MustGetUserID(ctx)
+		choreListID := r.PathValue("id")
+		if choreListID == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		_, err := inviteStore.CreateInviteWithChoreList(ctx, userID, choreListID, time.Now(), r)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, err)
+		}
+		http.Redirect(w, r, fmt.Sprintf("/chore-lists/%s/edit", choreListID), http.StatusSeeOther)
+		return nil
+	})
+}
+
+func ChoreListMux(db *sql.DB, view *View, inviteStore *InviteStore) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /chore-lists/new", ChoreListNewPage(view))
 	mux.Handle("POST /chore-lists/", ChoreListNewHandler(db))
+	mux.Handle("POST /chore-lists/{id}", ChoreListUpdateHandler(db, view))
+	mux.Handle("POST /chore-lists/{id}/invites/", ChoreListCreateInviteHandler(db, view, inviteStore))
 	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreNewPage(view))
 	mux.Handle("GET /chore-lists/{choreListID}/edit", ChoreListEditPage(db, view))
 	mux.Handle("GET /chore-lists/{choreListID}", ChoreListPage(db, view))

@@ -25,9 +25,8 @@ func (s *InviteStore) CreateInvitePage(ctx context.Context, userID string, w htt
 	return s.view.InviteCreate(w, r, InviteCreateView{ChoreLists: choreLists})
 }
 
-func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.Time, r *http.Request) (string, error) {
-	choreListID := r.FormValue("choreListID")
-	if choreListID != "" {
+func (s *InviteStore) CreateInviteWithChoreList(ctx context.Context, userID, choreListID string, now time.Time, r *http.Request) (string, error) {
+	if choreListID == "" {
 		choreList, err := cdb.New(s.db).GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{UserID: userID, ID: choreListID})
 		if err != nil || choreList.ID == "" {
 			return "", srvu.Err(http.StatusUnauthorized, err)
@@ -44,6 +43,11 @@ func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.
 		return "", err
 	}
 	return inv.ID, err
+}
+
+func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.Time, r *http.Request) (string, error) {
+	choreListID := r.FormValue("choreListID")
+	return s.CreateInviteWithChoreList(ctx, userID, choreListID, now, r)
 }
 
 func (s *InviteStore) InvitePage(ctx context.Context, userID string, inviteID string, now time.Time, w http.ResponseWriter, r *http.Request) error {
