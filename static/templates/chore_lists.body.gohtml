@@ -1,6 +1,6 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.ChoreListsView*/ -}}
 <header>
-    {{ template "chore_lists.nav_header.gohtml" }}
+    {{ template "chore_lists.nav_header.gohtml" . }}
 </header>
 <main>
     <div class="container" id="container">
@@ -12,9 +12,8 @@
                     {{ if and .ChoreCount (gt .MemberCount 1) }}, {{end}}
                     {{ if .ChoreCount }}{{ .ChoreCount }} chores{{ end }}</p>
                 <div class="group">
-                    <a class="icon-button button" href="/chore-lists/{{.ID}}/edit" hx-get="/chore-lists/{{.ID}}/edit"
-                       hx-target="body" hx-swap="beforeend">
-                        <img src="/static/public/icons/pencil.svg" alt="edit"/>
+                    <a class="icon-button button" href="/chore-lists/{{.ID}}/edit?prev={{ $.RequestDetails.CurrPath }}">
+                        <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>
                     </a>
                 </div>
             </div>

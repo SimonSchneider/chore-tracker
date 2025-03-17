@@ -46,3 +46,9 @@
 - back to main page
 - remove list
 - edit list
+
+# New todo
+
+- [ ] each link on pages will include a `?prev=` query param that will include the current page path
+- [ ] each submit/post link will include a `?next=` query param that will include the next page path (normally the value
+  of the prev query param)

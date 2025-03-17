@@ -7,11 +7,11 @@
     <ul class="nav-right">
         <li>
             <div class="group">
-                <a href="/settings" class="icon-button button">
-                    <img alt="settings" src="/static/public/icons/settings.svg"/>
+                <a href="/settings?prev={{.RequestDetails.CurrPath}}" class="icon-button button">
+                    <img alt="settings" src="/static/public/icons/settings.svg" width="24" height="24"/>
                 </a>
-                <a href="/chore-lists/new" class="icon-button button">
-                    <img alt="create chore list" src="/static/public/icons/plus.svg"/>
+                <a href="/chore-lists/new?prev={{ $.RequestDetails.CurrPath }}" class="icon-button button">
+                    <img alt="create chore list" src="/static/public/icons/plus.svg" width="24" height="24"/>
                 </a>
             </div>
         </li>

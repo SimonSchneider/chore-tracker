@@ -5,8 +5,7 @@ on keyup[key is 'Escape'] trigger closeModal
 " open>
     <div class="modal-underlay" _="on click trigger closeModal"></div>
     <article>
-        <form method="post" {{if .ID }} action="/chores/{{.ID}}" {{ else }} action="/chores/" {{ end }} hx-boost="true"
-              hx-push-url="false">
+        <form method="post" {{if .ID }} action="/chores/{{.ID}}" {{ else }} action="/chores/" {{ end }}>
             <header class="modal-header">
                 {{if .ID}}
                     <h2>Edit Chore</h2>
@@ -15,7 +14,7 @@ on keyup[key is 'Escape'] trigger closeModal
                 {{end}}
                 <button class="icon-button reset" aria-label="Close"
                         _="on click trigger closeModal">
-                    <img src="/static/public/icons/x.svg" alt="close">
+                    <img src="/static/public/icons/x.svg" alt="close" width="24" height="24">
                 </button>
             </header>
             <div class="modal-body">

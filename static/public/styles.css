@@ -17,14 +17,14 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 1rem 0 1rem;
+    margin: 0 1rem 0 1rem;
 }
 
 header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 2rem 0 2rem;
+    margin: 0 1rem 0 1rem;
 }
 
 .nav {
@@ -35,6 +35,7 @@ header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
+    gap: 1rem;
 }
 
 .nav-left {
@@ -88,7 +89,7 @@ button:not([disabled]) {
     flex-direction: row;
     gap: 0.5rem;
     align-items: center;
-    padding: var(--button-padding) 0.5rem;
+    padding-left: 0.5rem;
     margin: 0;
     background-color: var(--color-primary);
     color: black;

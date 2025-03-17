@@ -1,0 +1,22 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
+<dialog id="modal" _="
+on closeModal add .closing then wait for animationend then remove me
+on keyup[key is 'Escape'] trigger closeModal
+" open>
+    <div class="modal-underlay" _="on click trigger closeModal"></div>
+    <article id="article">
+        <header class="modal-header">
+            <h2>Edit ChoreList</h2>
+            <a href="/chore-lists/"
+               _="on click halt default
+                on click trigger closeModal"
+               class="icon-button button reset"
+               aria-label="Close">
+                <img src="/static/public/icons/x.svg" alt="close" width="24" height="24">
+            </a>
+        </header>
+        <form method="post" action="/chore-lists/{{ .List.ID }}">
+            {{ template  "chore_list_edit.gohtml" . }}
+        </form>
+    </article>
+</dialog>

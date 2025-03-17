@@ -18,6 +18,7 @@ FROM invitation
 WHERE id = ?
   AND expires_at > ? RETURNING *;
 
+
 -- name: GetInvitationsByCreator :many
 SELECT inv.*, cl.name as chore_list_name
 FROM invitation inv
@@ -30,3 +31,9 @@ SELECT *
 FROM invitation
 WHERE chore_list_id = ?
   AND expires_at > ?;
+
+-- name: DeleteInviteByChoreList :exec
+DELETE
+FROM invitation
+WHERE chore_list_id = ?
+  AND id = ?;

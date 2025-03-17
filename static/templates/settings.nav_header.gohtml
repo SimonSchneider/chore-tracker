@@ -3,8 +3,8 @@
     <ul class="nav-left">
         <li>
             <div class="group">
-                <a href="{{ .RequestDetails.BackPath }}" class="icon-button button">
-                    <img alt="back" src="/static/public/icons/arrow-left.svg"/>
+                <a href="{{ .RequestDetails.PrevPath }}" class="icon-button button">
+                    <img alt="back" src="/static/public/icons/arrow-left.svg" width="24" height="24"/>
                 </a>
             </div>
         </li>
@@ -14,7 +14,7 @@
         <li>
             <form method="post" action="/logout">
                 <button type="submit" class="icon-button adorned-button">
-                    <img alt="logout" src="/static/public/icons/logout.svg"/>
+                    <img alt="logout" src="/static/public/icons/logout.svg" width="24" height="24"/>
                     Logout
                 </button>
             </form>

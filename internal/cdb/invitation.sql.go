@@ -68,6 +68,23 @@ func (q *Queries) DeleteInvite(ctx context.Context, arg DeleteInviteParams) (Inv
 	return i, err
 }
 
+const deleteInviteByChoreList = `-- name: DeleteInviteByChoreList :exec
+DELETE
+FROM invitation
+WHERE chore_list_id = ?
+  AND id = ?
+`
+
+type DeleteInviteByChoreListParams struct {
+	ChoreListID sql.NullString
+	ID          string
+}
+
+func (q *Queries) DeleteInviteByChoreList(ctx context.Context, arg DeleteInviteByChoreListParams) error {
+	_, err := q.db.ExecContext(ctx, deleteInviteByChoreList, arg.ChoreListID, arg.ID)
+	return err
+}
+
 const getInvitationsByChoreList = `-- name: GetInvitationsByChoreList :many
 SELECT id, created_at, expires_at, chore_list_id, created_by
 FROM invitation

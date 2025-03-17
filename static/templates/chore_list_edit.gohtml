@@ -1,23 +1,22 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
-<article id="article">
-    <form method="post" action="/chore-lists/{{ .List.ID }}" hx-boost="true" hx-disinherit="hx-boost"
-          hx-push-url="false">
-        <header class="modal-header">
-            <h2>Edit ChoreList</h2>
-            <a href="/chore-lists/"
-               _="on click halt default
-                on click trigger closeModal"
-               class="icon-button button reset"
-               aria-label="Close">
-                <img src="/static/public/icons/x.svg" alt="close">
-            </a>
-        </header>
-        <div class="modal-body">
-            <fieldset role="group">
-                <input autofocus name="name" style="flex-grow: 8" aria-label="chore list name"
-                       value="{{ .List.Name }}" type="text"
-                       placeholder="name"/>
-            </fieldset>
+{{ if .IsEdit }}
+    <form id="create-invite-form" method="post" action="/chore-lists/{{ .List.ID }}/invites/"></form>
+    <form id="delete-form" method="post" action="/chore-lists/{{ .List.ID }}/delete"></form>
+    {{ range .Invites }}
+        <form id="delete-invite-{{ .ID }}" method="post"
+              action="/chore-lists/{{ $.List.ID }}/invites/{{ .ID }}/delete"></form>
+    {{ end }}
+{{ end }}
+<form method="post"
+      {{ if .IsEdit }}action="/chore-lists/{{ .List.ID }}?next={{.RequestDetails.PrevPath}}"
+      {{ else }}action="/chore-lists/"{{ end }}>
+    <div class="modal-body">
+        <fieldset role="group">
+            <input autofocus name="name" style="flex-grow: 8" aria-label="chore list name"
+                   value="{{ .List.Name }}" type="text"
+                   placeholder="name"/>
+        </fieldset>
+        {{ if .IsEdit }}
             <details open>
                 <summary class="modal-sub-header"><h3>Members</h3></summary>
                 <div class="container">
@@ -25,7 +24,7 @@
                         <div class="chore-container">
                             <p class="name">{{ .DisplayName }}</p>
                             <button class="icon-button" aria-label="remove">
-                                <img src="/static/public/icons/x.svg" alt="remove">
+                                <img src="/static/public/icons/x.svg" alt="remove" width="24" height="24">
                             </button>
                         </div>
                     {{ end }}
@@ -34,22 +33,18 @@
             <details open>
                 <summary class="modal-sub-header">
                     <h3>Invitations</h3>
-                    <button class="icon-button" aria-label="Create Invite"
-                            hx-post="/chore-lists/{{ .List.ID }}/invites/"
-                            hx-target="#article" hx-swap="outerHTML">
-                        <img src="/static/public/icons/plus.svg" alt="invite">
+                    <button type="submit" form="create-invite-form" class="icon-button" aria-label="Create Invite">
+                        <img src="/static/public/icons/plus.svg" alt="invite" width="24" height="24">
                     </button>
-                    {{/*                    <a class="button icon-button" href="/invites/create" aria-label="Create Invite">*/}}
-                    {{/*                        <img src="/static/public/icons/plus.svg" alt="invite">*/}}
-                    {{/*                    </a>*/}}
                 </summary>
                 {{ if .Invites }}
                     <div class="container">
                         {{ range .Invites }}
                             <div class="chore-container">
                                 <a class="name" href="/invites/{{ .ID }}">{{ .ID }}</a>
-                                <button class="icon-button" aria-label="delete">
-                                    <img src="/static/public/icons/x.svg" alt="delete">
+                                <button class="icon-button" aria-label="delete" type="submit"
+                                        form="delete-invite-{{ .ID }}">
+                                    <img src="/static/public/icons/x.svg" alt="delete" width="24" height="24">
                                 </button>
                             </div>
                         {{ end }}
@@ -60,14 +55,17 @@
                     </p>
                 {{ end }}
             </details>
-        </div>
-        <footer class="modal-footer">
-            <button class="reset">
+        {{ end }}
+    </div>
+    <div class="modal-footer">
+        {{ if .IsEdit }}
+            <button class="reset adorned-button" type="submit" form="delete-form">
+                <img alt="logout" src="/static/public/icons/logout.svg" width="24" height="24"/>
                 Delete
             </button>
-            <button type="submit">
-                Save
-            </button>
-        </footer>
-    </form>
-</article>
+        {{ end }}
+        <button type="submit">
+            {{ if .IsEdit }}Save{{ else }}Create{{ end }}
+        </button>
+    </div>
+</form>

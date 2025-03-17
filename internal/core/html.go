@@ -21,12 +21,8 @@ func ChoreAddHandler(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("creating the chore: %w", err))
 		}
-		if r.Header.Get("HX-Request") == "true" {
-			return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, chore.ChoreListID)
-		} else {
-			http.Redirect(w, r, fmt.Sprintf("/chores/%s", chore.ID), http.StatusSeeOther)
-			return nil
-		}
+		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", chore.ChoreListID))
+		return nil
 	})
 }
 
@@ -41,7 +37,7 @@ func ChoreEditPage(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		return view.ChoreModal(w, r, ch)
+		return view.ChoreEditPage(w, r, ChoreEditView{Chore: *ch})
 	})
 }
 
@@ -65,7 +61,6 @@ func ChoreCompleteHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		userID := auth.MustGetUserID(ctx)
-		today := date.Today()
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -80,7 +75,8 @@ func ChoreCompleteHandler(db *sql.DB, view *View) http.Handler {
 		if err := Complete(ctx, db, userID, id, inp.CompletedAt); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("completing the chore: %w", err))
 		}
-		return ChoreListRender(ctx, db, view, w, r, today, userID, chore.ChoreListID)
+		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", chore.ChoreListID))
+		return nil
 	})
 }
 
@@ -99,7 +95,8 @@ func ChoreSnoozeHandler(db *sql.DB, view *View) http.Handler {
 		if err := Snooze(ctx, db, today, userID, id, 1*date.Day); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
 		}
-		return ChoreListRender(ctx, db, view, w, r, today, userID, chore.ChoreListID)
+		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", chore.ChoreListID))
+		return nil
 	})
 }
 
@@ -118,7 +115,8 @@ func ChoreExpediteHandler(db *sql.DB, view *View) http.Handler {
 		if err := Expedite(ctx, db, today, userID, id); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("snoozing the chore: %w", err))
 		}
-		return ChoreListRender(ctx, db, view, w, r, today, userID, chore.ChoreListID)
+		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", chore.ChoreListID))
+		return nil
 	})
 }
 
@@ -140,22 +138,8 @@ func ChoreUpdateHandler(db *sql.DB, view *View) http.Handler {
 		if _, err := Update(ctx, db, id, inp); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("updating the chore: %w", err))
 		}
-		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, chore.ChoreListID)
-	})
-}
-
-func ChorePage(db *sql.DB, view *View) http.Handler {
-	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
-		if id == "" {
-			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
-		}
-		ch, err := Get(ctx, db, userID, id)
-		if err != nil {
-			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
-		}
-		return view.ChoreElement(w, r, ch)
+		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", chore.ChoreListID))
+		return nil
 	})
 }
 
@@ -166,14 +150,14 @@ func ChoreDeleteHandler(db *sql.DB) http.Handler {
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
-		_, err := Get(ctx, db, userID, id)
+		ch, err := Get(ctx, db, userID, id)
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
 		}
 		if err := Delete(ctx, db, id); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("deleting the chore: %w", err))
 		}
-		w.WriteHeader(http.StatusOK)
+		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", ch.ChoreListID))
 		return nil
 	})
 }
@@ -184,8 +168,8 @@ func ChoreMux(db *sql.DB, view *View) http.Handler {
 	mux.Handle("POST /chores/{id}/complete", ChoreCompleteHandler(db, view))
 	mux.Handle("POST /chores/{id}/snooze", ChoreSnoozeHandler(db, view))
 	mux.Handle("POST /chores/{id}/expedite", ChoreExpediteHandler(db, view))
+	mux.Handle("POST /chores/{id}/delete", ChoreDeleteHandler(db))
 	mux.Handle("POST /chores/{$}", ChoreAddHandler(db, view))
-	mux.Handle("GET /chores/{id}", ChorePage(db, view))
 	mux.Handle("POST /chores/{id}", ChoreUpdateHandler(db, view))
 	mux.Handle("DELETE /chores/{id}", ChoreDeleteHandler(db))
 	return mux

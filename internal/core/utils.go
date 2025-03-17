@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/SimonSchneider/goslu/sid"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -25,4 +26,24 @@ func HandleNested(mux *http.ServeMux, pattern string, h http.Handler) {
 		prefix = prefix[:len(prefix)-1]
 	}
 	mux.Handle(pattern, http.StripPrefix(prefix, h))
+}
+
+func getReferer(r *http.Request, fb string) string {
+	ref, err := url.Parse(r.Referer())
+	if err != nil {
+		return ""
+	}
+	return ref.RequestURI()
+}
+
+func redirectToReferer(w http.ResponseWriter, r *http.Request, fb string) {
+	http.Redirect(w, r, getReferer(r, fb), http.StatusSeeOther)
+}
+
+func redirectToNext(w http.ResponseWriter, r *http.Request, fb string) {
+	next := r.URL.Query().Get("next")
+	if next == "" {
+		next = fb
+	}
+	http.Redirect(w, r, next, http.StatusSeeOther)
 }

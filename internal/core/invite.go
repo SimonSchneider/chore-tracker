@@ -50,6 +50,10 @@ func (s *InviteStore) CreateInvite(ctx context.Context, userID string, now time.
 	return s.CreateInviteWithChoreList(ctx, userID, choreListID, now, r)
 }
 
+func (s *InviteStore) DeleteInviteInChoreList(ctx context.Context, inviteID, choreListID string) error {
+	return cdb.New(s.db).DeleteInviteByChoreList(ctx, cdb.DeleteInviteByChoreListParams{ID: inviteID, ChoreListID: sqlu.NullString(choreListID)})
+}
+
 func (s *InviteStore) InvitePage(ctx context.Context, userID string, inviteID string, now time.Time, w http.ResponseWriter, r *http.Request) error {
 	invite, err := cdb.New(s.db).GetInvite(ctx, cdb.GetInviteParams{ID: inviteID, ExpiresAt: now.UnixMilli()})
 	if err != nil {

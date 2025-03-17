@@ -4,7 +4,7 @@
         <li>
             <div class="group">
                 <a href="/chore-lists/" class="icon-button button">
-                    <img alt="chore lists" src="/static/public/icons/arrow-left.svg"/>
+                    <img alt="back" src="/static/public/icons/arrow-left.svg" width="24" height="24"/>
                 </a>
             </div>
         </li>
@@ -13,18 +13,16 @@
     <ul class="nav-right">
         <li>
             <div class="group">
-                <a class="button icon-button" href="/chore-lists/{{.List.ID}}/edit"
-                   hx-get="/chore-lists/{{.List.ID}}/edit"
-                   hx-target="body" hx-swap="beforeend">
-                    <img src="/static/public/icons/pencil.svg" alt="edit"/>
+                <a href="/chore-lists/{{.List.ID}}/edit?prev={{.CurrPath}}" class="button icon-button">
+                    <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>
                 </a>
-                <a href="/settings" class="icon-button button">
-                    <img alt="settings" src="/static/public/icons/settings.svg"/>
+                <a href="/settings?prev={{.CurrPath}}" class="icon-button button">
+                    <img alt="settings" src="/static/public/icons/settings.svg" width="24" height="24"/>
                 </a>
-                <button class="icon-button" hx-get="/chore-lists/{{.List.ID}}/chores/new" hx-target="body"
-                        hx-swap="beforeend">
-                    <img alt="create chore" src="/static/public/icons/plus.svg"/>
-                </button>
+                <a href="/chore-lists/{{.List.ID}}/chores/new?prev={{.CurrPath}}"
+                   class="icon-button button">
+                    <img alt="create chore" src="/static/public/icons/plus.svg" width="24" height="24"/>
+                </a>
             </div>
         </li>
     </ul>

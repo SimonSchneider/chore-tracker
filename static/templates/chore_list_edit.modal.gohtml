@@ -1,8 +1,0 @@
-{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
-<dialog id="modal" _="
-on closeModal add .closing then wait for animationend then remove me
-on keyup[key is 'Escape'] trigger closeModal
-" open>
-    <div class="modal-underlay" _="on click trigger closeModal"></div>
-    {{ template  "chore_list_edit.gohtml" . }}
-</dialog>
