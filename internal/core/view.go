@@ -41,8 +41,8 @@ func NewView(p templ.TemplateProvider) *View {
 }
 
 type ChoreListsView struct {
-	RequestDetails *RequestDetails
-	ChoreLists     []cdb.GetChoreListsByUserRow
+	*RequestDetails
+	ChoreLists []cdb.GetChoreListsByUserRow
 }
 
 func (v *View) ChoreListsPage(w http.ResponseWriter, r *http.Request, d ChoreListsView) error {

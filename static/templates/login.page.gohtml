@@ -1,20 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-{{ template "head.gohtml" "Chores Settings" }}
+{{ template "head.gohtml" "Chores" }}
 <body>
+<header>
+    <nav class="nav">
+        <ul class="nav-left"></ul>
+        <h1>Chores</h1>
+        <ul class="nav-right"></ul>
+    </nav>
+</header>
+
 <main>
-    Hello, please login
     <form
             action="/sessions/"
             method="post"
+            class="login-form"
     >
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username"><br><br>
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password"><br><br>
+        <input type="password" id="password" name="password">
         <label for="rememberMe">Remember me</label>
         <input type="checkbox" id="rememberMe" name="rememberMe">
-        <input type="submit" value="Submit">
+        <button type="submit">Login</button>
     </form>
 </main>
 </body>

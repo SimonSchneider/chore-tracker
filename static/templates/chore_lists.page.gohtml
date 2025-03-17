@@ -3,6 +3,26 @@
 <html lang="en">
 {{ template "head.gohtml" "Chores" }}
 <body>
-{{ template "chore_lists.body.gohtml" . }}
+<header>
+    {{ template "chore_lists.nav_header.gohtml" . }}
+</header>
+<main>
+    <div class="container" id="container">
+        {{ range .ChoreLists }}
+            <div class="chore-container">
+                <a class="name" href="/chore-lists/{{ .ID }}">{{ .Name }}</a>
+                <p class="secondary-text">
+                    {{ if gt .MemberCount 1 }}{{ .MemberCount }} users{{end}}
+                    {{ if and .ChoreCount (gt .MemberCount 1) }}, {{end}}
+                    {{ if .ChoreCount }}{{ .ChoreCount }} chores{{ end }}</p>
+                <div class="group">
+                    <a class="icon-button button" href="/chore-lists/{{.ID}}/edit?prev={{ $.RequestDetails.CurrPath }}">
+                        <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>
+                    </a>
+                </div>
+            </div>
+        {{ end }}
+    </div>
+</main>
 </body>
 </html>

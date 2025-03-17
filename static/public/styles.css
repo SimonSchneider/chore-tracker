@@ -397,6 +397,29 @@ fieldset {
     gap: 0.5rem;
 }
 
+.login-form {
+    display: grid;
+    grid-gap: 1rem;
+    grid-template-columns: [label] auto [input] 1fr;
+}
+
+.login-form > label {
+    grid-column: label;
+    align-self: center;
+}
+
+.login-form > input {
+    grid-column: input;
+    align-self: center;
+    justify-self: left;
+}
+
+.login-form > button[type="submit"] {
+    grid-column: 1 / -1;
+    align-self: center;
+    justify-self: center;
+}
+
 input {
     margin: 0;
     padding: 0.5rem;
