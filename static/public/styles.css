@@ -115,7 +115,15 @@ button:not([disabled]):active, .button:active {
     display: flex;
     flex-direction: column;
     justify-self: center;
-    /*padding: 0 1rem;*/
+}
+
+.list-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-self: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 .group {
@@ -147,6 +155,8 @@ details summary {
     display: flex;
     cursor: pointer;
     margin: 0;
+    align-items: center;
+    height: 2rem;
     padding: 0.5rem 0.5rem;
 }
 
@@ -170,16 +180,18 @@ details summary :first-child {
 hr {
     border: 0;
     border-top: 1px solid var(--color-muted);
-    margin: 0.2rem 0;
+    margin: 0;
+    /*margin: 0.2rem 0;*/
 }
 
 .chore-container {
     display: flex;
     flex-direction: row;
+    height: 2rem;
     justify-content: space-between;
     padding: 0.3rem 0.5rem;
     background-color: var(--color-accent);
-    margin: 0.5rem 0.5rem;
+    /*margin: 0.5rem 0.5rem;*/
     border-radius: 0.5rem;
     align-items: stretch;
 }
@@ -355,11 +367,6 @@ article {
     padding: 0 0 0.5rem 0;
 }
 
-.modal-sub-header {
-    margin: 0;
-    padding: 0;
-}
-
 .modal-footer:has(> :only-child) {
     justify-content: flex-end;
 }
@@ -379,11 +386,6 @@ article {
     flex-direction: column;
     padding: 0;
     gap: 1.5rem
-}
-
-.modal-body > hr {
-    margin: 0;
-    padding: 0
 }
 
 fieldset {
@@ -439,6 +441,10 @@ input[type="submit"] {
     border-radius: 0.5rem;
     padding: 0.5rem;
     margin: 0.5rem 0;
+}
+
+input[type=checkbox] {
+    accent-color: var(--color-primary);
 }
 
 @keyframes fadeIn {

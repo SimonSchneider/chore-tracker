@@ -82,6 +82,12 @@ WHERE id = ?
   AND id IN (SELECT chore_list_id FROM chore_list_members WHERE user_id = ?)
 RETURNING *;
 
+-- name: RemoveUserFromChoreList :exec
+DELETE
+FROM chore_list_members
+WHERE chore_list_id = ?
+  AND user_id = ?;
+
 -- name: AddUserToChoreList :exec
 INSERT INTO chore_list_members
     (chore_list_id, user_id)

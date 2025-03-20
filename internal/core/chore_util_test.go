@@ -94,7 +94,7 @@ type Client struct {
 	authCookieName string
 	db             *sql.DB
 	mux            http.Handler
-	tokenStore     auth.TokenStore
+	tokenStore     auth.SessionStore
 	tmpl           *TestTemplateProvider
 }
 
@@ -118,7 +118,7 @@ func (c *Client) NewToken(ctx context.Context) (*ClientToken, error) {
 		return nil, err
 	}
 	token := core.NewId()
-	if err := c.tokenStore.StoreToken(ctx, u.ID, token, time.Now().Add(1*time.Hour)); err != nil {
+	if err := c.tokenStore.StoreSession(ctx, u.ID, token, time.Now().Add(1*time.Hour)); err != nil {
 		return nil, err
 	}
 	return &ClientToken{cookieName: c.authCookieName, val: token}, nil

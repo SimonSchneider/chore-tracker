@@ -24,6 +24,11 @@ import (
 
 func LoginPage(view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		session, _ := auth.GetSession(ctx)
+		if session.UserID != "" {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return nil
+		}
 		return view.LoginPage(w, r)
 	})
 }
@@ -73,6 +78,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		LoginFailedRedirect:         "/login",
 		DefaultLoginSuccessRedirect: "/",
 		SessionsPath:                "/sessions/",
+		CSRFTokenFieldName:          "CSRFToken",
 		SessionCookie: auth.CookieConfig{
 			Name:          "chore_session",
 			Expire:        30 * time.Minute,

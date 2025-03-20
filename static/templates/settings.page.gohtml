@@ -3,6 +3,11 @@
 <html lang="en">
 {{ template "head.gohtml" "Chores Settings" }}
 <body>
-{{ template "settings.body.gohtml" . }}
+<header>
+    {{ template "settings.nav_header.gohtml" . }}
+</header>
+<main>
+    {{ template "settings.gohtml" . }}
+</main>
 </body>
 </html>

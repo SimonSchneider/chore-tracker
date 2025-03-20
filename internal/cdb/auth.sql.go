@@ -11,18 +11,24 @@ import (
 
 const createToken = `-- name: CreateToken :exec
 INSERT INTO tokens
-    (user_id, token, expires_at)
-VALUES (?, ?, ?)
+    (user_id, token, csrf_token, expires_at)
+VALUES (?, ?, ?, ?)
 `
 
 type CreateTokenParams struct {
 	UserID    string
 	Token     string
+	CsrfToken string
 	ExpiresAt int64
 }
 
 func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error {
-	_, err := q.db.ExecContext(ctx, createToken, arg.UserID, arg.Token, arg.ExpiresAt)
+	_, err := q.db.ExecContext(ctx, createToken,
+		arg.UserID,
+		arg.Token,
+		arg.CsrfToken,
+		arg.ExpiresAt,
+	)
 	return err
 }
 
@@ -37,8 +43,29 @@ func (q *Queries) DeleteTokensByUserId(ctx context.Context, userID string) error
 	return err
 }
 
+const getCsrfTokenByUserAndCsrfToken = `-- name: GetCsrfTokenByUserAndCsrfToken :one
+SELECT COUNT(*)
+FROM tokens
+WHERE user_id = ?
+  AND csrf_token = ?
+  AND expires_at > ?
+`
+
+type GetCsrfTokenByUserAndCsrfTokenParams struct {
+	UserID    string
+	CsrfToken string
+	ExpiresAt int64
+}
+
+func (q *Queries) GetCsrfTokenByUserAndCsrfToken(ctx context.Context, arg GetCsrfTokenByUserAndCsrfTokenParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getCsrfTokenByUserAndCsrfToken, arg.UserID, arg.CsrfToken, arg.ExpiresAt)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getToken = `-- name: GetToken :one
-SELECT user_id, token, expires_at
+SELECT user_id, token, csrf_token, expires_at
 FROM tokens
 WHERE token = ?
   AND expires_at > ?
@@ -52,12 +79,17 @@ type GetTokenParams struct {
 func (q *Queries) GetToken(ctx context.Context, arg GetTokenParams) (Token, error) {
 	row := q.db.QueryRowContext(ctx, getToken, arg.Token, arg.ExpiresAt)
 	var i Token
-	err := row.Scan(&i.UserID, &i.Token, &i.ExpiresAt)
+	err := row.Scan(
+		&i.UserID,
+		&i.Token,
+		&i.CsrfToken,
+		&i.ExpiresAt,
+	)
 	return i, err
 }
 
 const getTokensByUser = `-- name: GetTokensByUser :many
-SELECT user_id, token, expires_at
+SELECT user_id, token, csrf_token, expires_at
 FROM tokens
 WHERE user_id = ?
 `
@@ -71,7 +103,12 @@ func (q *Queries) GetTokensByUser(ctx context.Context, userID string) ([]Token, 
 	var items []Token
 	for rows.Next() {
 		var i Token
-		if err := rows.Scan(&i.UserID, &i.Token, &i.ExpiresAt); err != nil {
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Token,
+			&i.CsrfToken,
+			&i.ExpiresAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

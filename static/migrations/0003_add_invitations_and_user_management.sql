@@ -31,6 +31,7 @@ CREATE TABLE tokens
 (
     user_id    TEXT    NOT NULL,
     token      TEXT    NOT NULL PRIMARY KEY,
+    csrf_token TEXT    NOT NULL,
     expires_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE
 );

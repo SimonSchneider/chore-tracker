@@ -6,51 +6,64 @@ import (
 	"time"
 )
 
-var _ TokenStore = &InMemoryTokenStore{}
+var _ SessionStore = &InMemorySessionStore{}
 
-type storedToken struct {
-	userID    string
-	token     string
-	expiresAt time.Time
+type InMemorySessionStore struct {
+	lock         sync.Mutex
+	sessions     map[string]*Session
+	userSessions map[string][]*Session
 }
 
-type InMemoryTokenStore struct {
-	lock       sync.Mutex
-	tokens     map[string]storedToken
-	userTokens map[string][]string
+func NewInMemoryTokenStore() *InMemorySessionStore {
+	return &InMemorySessionStore{sessions: make(map[string]*Session), userSessions: make(map[string][]*Session), lock: sync.Mutex{}}
 }
 
-func NewInMemoryTokenStore() *InMemoryTokenStore {
-	return &InMemoryTokenStore{tokens: make(map[string]storedToken), userTokens: make(map[string][]string), lock: sync.Mutex{}}
-}
-
-func (s *InMemoryTokenStore) StoreToken(ctx context.Context, userID, token string, expiresAt time.Time) error {
+func (s *InMemorySessionStore) StoreSession(ctx context.Context, session Session) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.userTokens[userID] = append(s.userTokens[userID], token)
-	s.tokens[token] = storedToken{userID, token, expiresAt}
+	s.userSessions[session.UserID] = append(s.userSessions[session.UserID], &session)
+	s.sessions[session.Token] = &session
 	return nil
 }
 
-func (s *InMemoryTokenStore) DeleteTokens(ctx context.Context, userID string) error {
+func (s *InMemorySessionStore) DeleteSessions(ctx context.Context, userID string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	tokens, ok := s.userTokens[userID]
+	sessions, ok := s.userSessions[userID]
 	if !ok {
 		return nil
 	}
-	for _, token := range tokens {
-		delete(s.tokens, token)
+	for _, session := range sessions {
+		delete(s.sessions, session.Token)
 	}
+	delete(s.userSessions, userID)
 	return nil
 }
 
-func (s *InMemoryTokenStore) VerifyToken(ctx context.Context, token string, now time.Time) (string, time.Time, bool, error) {
+func (s *InMemorySessionStore) VerifySession(ctx context.Context, token string, now time.Time) (Session, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	sToken, ok := s.tokens[token]
+	session, ok := s.sessions[token]
 	if !ok {
-		return "", time.Time{}, false, nil
+		return Session{}, false, nil
 	}
-	return sToken.userID, sToken.expiresAt, sToken.expiresAt.After(now), nil
+	return *session, session.ExpiresAt.After(now), nil
+}
+
+func (s *InMemorySessionStore) VerifyCSRFToken(ctx context.Context, userID, csrfToken string, now time.Time) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	sessions, ok := s.userSessions[userID]
+	if !ok {
+		return false, nil
+	}
+	if len(sessions) == 0 {
+		return false, nil
+	}
+	for _, session := range sessions {
+		if session.CSRFToken == csrfToken {
+			return session.ExpiresAt.After(now), nil
+		}
+	}
+	return false, nil
 }

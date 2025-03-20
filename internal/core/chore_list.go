@@ -21,7 +21,7 @@ func ChoreListNewPage(view *View) http.Handler {
 
 func ChoreListNewHandler(db *sql.DB) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		name := r.FormValue("name")
 		if name == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing name"))
@@ -58,9 +58,9 @@ func ChoreListNewHandler(db *sql.DB) http.Handler {
 
 func ChoreListUpdateHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		name := r.FormValue("name")
-		id := r.PathValue("id")
+		id := r.PathValue("choreListID")
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -77,6 +77,22 @@ func ChoreListUpdateHandler(db *sql.DB, view *View) http.Handler {
 	})
 }
 
+func ChoreListLeaveHandler(db *sql.DB, view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		userID := auth.MustGetSession(ctx).UserID
+		id := r.PathValue("choreListID")
+		if id == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
+		}
+		q := cdb.New(db)
+		if err := q.RemoveUserFromChoreList(ctx, cdb.RemoveUserFromChoreListParams{UserID: userID, ChoreListID: id}); err != nil {
+			return srvu.Err(http.StatusInternalServerError, err)
+		}
+		redirectToNext(w, r, "/chore-lists")
+		return nil
+	})
+}
+
 func ChoreListsRender(ctx context.Context, db *sql.DB, view *View, w http.ResponseWriter, r *http.Request, userID string) error {
 	choreLists, err := cdb.New(db).GetChoreListsByUser(ctx, userID)
 	if err != nil {
@@ -89,7 +105,7 @@ func ChoreListsRender(ctx context.Context, db *sql.DB, view *View, w http.Respon
 
 func ChoreListsPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		return ChoreListsRender(ctx, db, view, w, r, userID)
 	})
 }
@@ -113,14 +129,14 @@ func ChoreListRender(ctx context.Context, db *sql.DB, view *View, w http.Respons
 func ChoreListPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		choreListID := r.PathValue("choreListID")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		return ChoreListRender(ctx, db, view, w, r, date.Today(), userID, choreListID)
 	})
 }
 
 func ChoreListEditPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		id := r.PathValue("choreListID")
 		q := cdb.New(db)
 		choreList, err := q.GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{UserID: userID, ID: id})
@@ -149,8 +165,8 @@ func ChoreListNewChorePage(view *View) http.Handler {
 
 func ChoreListCreateInviteHandler(db *sql.DB, view *View, inviteStore *InviteStore) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
-		choreListID := r.PathValue("id")
+		userID := auth.MustGetSession(ctx).UserID
+		choreListID := r.PathValue("choreListID")
 		if choreListID == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -165,7 +181,7 @@ func ChoreListCreateInviteHandler(db *sql.DB, view *View, inviteStore *InviteSto
 
 func ChoreListDeleteInviteHandler(db *sql.DB, view *View, inviteStore *InviteStore) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		choreListID := r.PathValue("choreListID")
 		inviteID := r.PathValue("inviteID")
 		if inviteID == "" {
@@ -190,8 +206,9 @@ func ChoreListMux(db *sql.DB, view *View, inviteStore *InviteStore) *http.ServeM
 	mux := http.NewServeMux()
 	mux.Handle("GET /chore-lists/new", ChoreListNewPage(view))
 	mux.Handle("POST /chore-lists/", ChoreListNewHandler(db))
-	mux.Handle("POST /chore-lists/{id}", ChoreListUpdateHandler(db, view))
-	mux.Handle("POST /chore-lists/{id}/invites/", ChoreListCreateInviteHandler(db, view, inviteStore))
+	mux.Handle("POST /chore-lists/{choreListID}", ChoreListUpdateHandler(db, view))
+	mux.Handle("POST /chore-lists/{choreListID}/leave", ChoreListLeaveHandler(db, view))
+	mux.Handle("POST /chore-lists/{choreListID}/invites/", ChoreListCreateInviteHandler(db, view, inviteStore))
 	mux.Handle("POST /chore-lists/{choreListID}/invites/{inviteID}/delete", ChoreListDeleteInviteHandler(db, view, inviteStore))
 	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreListNewChorePage(view))
 	mux.Handle("GET /chore-lists/{choreListID}/edit", ChoreListEditPage(db, view))

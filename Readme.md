@@ -49,6 +49,15 @@
 
 # New todo
 
-- [ ] each link on pages will include a `?prev=` query param that will include the current page path
-- [ ] each submit/post link will include a `?next=` query param that will include the next page path (normally the value
-  of the prev query param)
+- invite accept page
+    - login or register
+    - nicer UI
+- invite page
+    - nicer UI
+- invite create page (remove for now)
+- session manager according to blog
+- proper cache headers
+- etag support?
+- settings page
+    - nicer UI
+  

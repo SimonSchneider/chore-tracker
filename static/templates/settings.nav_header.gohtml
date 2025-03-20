@@ -13,6 +13,7 @@
     <ul class="nav-right">
         <li>
             <form method="post" action="/logout">
+                <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
                 <button type="submit" class="icon-button adorned-button">
                     <img alt="logout" src="/static/public/icons/logout.svg" width="24" height="24"/>
                     Logout

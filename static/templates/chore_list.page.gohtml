@@ -19,42 +19,51 @@
                 </span>
                 </summary>
                 {{ if .HasChores }}
-                    {{range .Chores}}
-                        <div class="chore-container" id="chore-{{.ID}}">
-                            <form id="complete-form" method="post"
-                                  action="/chores/{{.ID}}/complete?next={{ $.CurrPath }}"></form>
-                            <form id="expedite-form" method="post"
-                                  action="/chores/{{.ID}}/expedite?next={{ $.CurrPath }}"></form>
-                            <form id="snooze-form" method="post"
-                                  action="/chores/{{.ID}}/snooze?next={{ $.CurrPath }}"></form>
-                            <div class="group">
-                                <button class="icon-button" type="submit" form="complete-form">
-                                    <img src="/static/public/icons/check.svg" alt="complete" width="24" height="24">
-                                </button>
-                                {{ if gt .DurationToNext 0 }}
-                                    <button class="icon-button" type="submit" form="expedite-form">
-                                        <img src="/static/public/icons/arrow-up.svg" alt="delete" width="24" height="24">
+                    <div class="list-container">
+                        {{range .Chores}}
+                            <div class="chore-container" id="chore-{{.ID}}">
+                                <form id="complete-form" method="post"
+                                      action="/chores/{{.ID}}/complete?nkext={{ $.CurrPath }}">
+                                    <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
+                                </form>
+                                <form id="expedite-form" method="post"
+                                      action="/chores/{{.ID}}/expedite?next={{ $.CurrPath }}">
+                                    <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
+                                </form>
+                                <form id="snooze-form" method="post"
+                                      action="/chores/{{.ID}}/snooze?next={{ $.CurrPath }}">
+                                    <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
+                                </form>
+                                <div class="group">
+                                    <button class="icon-button" type="submit" form="complete-form">
+                                        <img src="/static/public/icons/check.svg" alt="complete" width="24" height="24">
                                     </button>
-                                {{ else }}
-                                    <button class="icon-button" type="submit" form="snooze-form">
-                                        <img src="/static/public/icons/zzz.svg" alt="delete" width="24" height="24">
-                                    </button>
-                                {{ end }}
-                            </div>
-                            <p class="name">
-                                {{ .Name }}
-                            </p>
-                            <p class="secondary-text">
-                                {{.DurationToNext }}
-                            </p>
+                                    {{ if gt .DurationToNext 0 }}
+                                        <button class="icon-button" type="submit" form="expedite-form">
+                                            <img src="/static/public/icons/arrow-up.svg" alt="delete" width="24"
+                                                 height="24">
+                                        </button>
+                                    {{ else }}
+                                        <button class="icon-button" type="submit" form="snooze-form">
+                                            <img src="/static/public/icons/zzz.svg" alt="delete" width="24" height="24">
+                                        </button>
+                                    {{ end }}
+                                </div>
+                                <p class="name">
+                                    {{ .Name }}
+                                </p>
+                                <p class="secondary-text">
+                                    {{.DurationToNext }}
+                                </p>
 
-                            <div class="group">
-                                <a href="/chores/{{ .ID }}/edit?prev={{ $.CurrPath }}" class="icon-button button">
-                                    <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>
-                                </a>
+                                <div class="group">
+                                    <a href="/chores/{{ .ID }}/edit?prev={{ $.CurrPath }}" class="icon-button button">
+                                        <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                    {{end}}
+                        {{end}}
+                    </div>
                 {{ else }}
                     <p class="details-empty">
                         Nothing to do here

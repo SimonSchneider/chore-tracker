@@ -13,7 +13,7 @@ import (
 func SettingsPage(view *View, db *sql.DB) http.Handler {
 	q := cdb.New(db)
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userId := auth.MustGetUserID(ctx)
+		userId := auth.MustGetSession(ctx).UserID
 		usernames, err := q.GetPasswordAuthsByUser(ctx, userId)
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)

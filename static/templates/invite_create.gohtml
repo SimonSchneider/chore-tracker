@@ -2,6 +2,7 @@
 <div>
     Create an invite
     <form method="post">
+        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
         {{ if .ChoreLists }}
             <label for="choreListID">Chore List</label>
             <select id="choreListID" name="choreListID">

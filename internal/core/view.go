@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"github.com/SimonSchneider/goslu/templ"
 	"io"
 	"net/http"
@@ -16,6 +17,10 @@ func (r *RequestDetails) CurrPath() string {
 	return r.req.URL.RequestURI()
 }
 
+func (r *RequestDetails) CSRFToken() string {
+	return auth.MustGetSession(r.req.Context()).CSRFToken
+}
+
 func (r *RequestDetails) PrevPath() string {
 	return r.req.URL.Query().Get("prev")
 }
@@ -27,7 +32,9 @@ type HtmlTemplateProvider struct {
 func (p *HtmlTemplateProvider) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
 	if rw, ok := w.(http.ResponseWriter); ok {
 		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		rw.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, private")
+		rw.Header().Set("Pragma", "no-cache")
+		rw.Header().Set("Expires", "0")
 	}
 	return p.TemplateProvider.ExecuteTemplate(w, name, data)
 }
@@ -139,6 +146,7 @@ func (v *View) InvitePage(w http.ResponseWriter, r *http.Request, d InviteView) 
 }
 
 type InviteAcceptView struct {
+	*RequestDetails
 	InviteID      string
 	ChoreListName string
 	InviterName   string
@@ -146,6 +154,7 @@ type InviteAcceptView struct {
 }
 
 func (v *View) InviteAcceptPage(w http.ResponseWriter, r *http.Request, d InviteAcceptView) error {
+	d.RequestDetails = &RequestDetails{req: r}
 	return v.p.ExecuteTemplate(w, "invite_accept.page.gohtml", d)
 }
 

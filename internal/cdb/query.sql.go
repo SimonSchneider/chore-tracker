@@ -330,6 +330,23 @@ func (q *Queries) GetChoresByList(ctx context.Context, choreListID string) ([]Ch
 	return items, nil
 }
 
+const removeUserFromChoreList = `-- name: RemoveUserFromChoreList :exec
+DELETE
+FROM chore_list_members
+WHERE chore_list_id = ?
+  AND user_id = ?
+`
+
+type RemoveUserFromChoreListParams struct {
+	ChoreListID string
+	UserID      string
+}
+
+func (q *Queries) RemoveUserFromChoreList(ctx context.Context, arg RemoveUserFromChoreListParams) error {
+	_, err := q.db.ExecContext(ctx, removeUserFromChoreList, arg.ChoreListID, arg.UserID)
+	return err
+}
+
 const snoozeChore = `-- name: SnoozeChore :exec
 UPDATE chore
 SET snoozed_for = ?

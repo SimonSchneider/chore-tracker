@@ -12,7 +12,7 @@ import (
 
 func ChoreAddHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		var inp Input
 		if err := srvu.Decode(r, &inp, false); err != nil {
 			return err
@@ -29,7 +29,7 @@ func ChoreAddHandler(db *sql.DB, view *View) http.Handler {
 func ChoreEditPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -60,7 +60,7 @@ func (c *CompletionInput) FromForm(r *http.Request) (err error) {
 func ChoreCompleteHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -83,7 +83,7 @@ func ChoreCompleteHandler(db *sql.DB, view *View) http.Handler {
 func ChoreSnoozeHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		today := date.Today()
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
@@ -103,7 +103,7 @@ func ChoreSnoozeHandler(db *sql.DB, view *View) http.Handler {
 func ChoreExpediteHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		today := date.Today()
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
@@ -123,7 +123,7 @@ func ChoreExpediteHandler(db *sql.DB, view *View) http.Handler {
 func ChoreUpdateHandler(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}
@@ -146,7 +146,7 @@ func ChoreUpdateHandler(db *sql.DB, view *View) http.Handler {
 func ChoreDeleteHandler(db *sql.DB) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
-		userID := auth.MustGetUserID(ctx)
+		userID := auth.MustGetSession(ctx).UserID
 		if id == "" {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing id"))
 		}

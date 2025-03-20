@@ -56,6 +56,7 @@ type PasswordAuth struct {
 type Token struct {
 	UserID    string
 	Token     string
+	CsrfToken string
 	ExpiresAt int64
 }
 
