@@ -1,0 +1,77 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
+{{ if .IsEdit }}
+    <form id="create-invite-form" method="post" action="/chore-lists/{{ .List.ID }}/invites/">
+        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
+    </form>
+    <form id="leave-form" method="post" action="/chore-lists/{{ .List.ID }}/leave">
+        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
+    </form>
+    {{ range .Invites }}
+        <form id="delete-invite-{{ .ID }}" method="post"
+              action="/chore-lists/{{ $.List.ID }}/invites/{{ .ID }}/delete">
+            <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
+        </form>
+    {{ end }}
+{{ end }}
+<form method="post"
+      {{ if .IsEdit }}action="/chore-lists/{{ .List.ID }}?next={{.RequestDetails.PrevPath}}"
+      {{ else }}action="/chore-lists/"{{ end }}>
+    <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
+    <div class="modal-body">
+        <fieldset role="group">
+            <input autofocus name="name" style="flex-grow: 8" aria-label="chore list name"
+                   value="{{ .List.Name }}" type="text"
+                   placeholder="name"/>
+        </fieldset>
+        {{ if .IsEdit }}
+            <div class="container">
+                <details open>
+                    <summary><span class="name">Members</span></summary>
+                    <div class="list-container">
+                        {{ range .Members }}
+                            <div class="chore-container">
+                                <p class="name">{{ .DisplayName }}</p>
+                            </div>
+                        {{ end }}
+                    </div>
+                </details>
+                <hr/>
+                <details open>
+                    <summary>
+                        <span class="name">Invitations</span>
+                        <button type="submit" form="create-invite-form" class="icon-button" aria-label="Create Invite">
+                            <img src="/static/public/icons/plus.svg" alt="invite" width="24" height="24">
+                        </button>
+                    </summary>
+                    {{ if .Invites }}
+                        <div class="list-container">
+                            {{ range .Invites }}
+                                <div class="chore-container">
+                                    <a class="name" href="/invites/{{ .ID }}">{{ .ID }}</a>
+                                    <button class="icon-button" aria-label="delete" type="submit"
+                                            form="delete-invite-{{ .ID }}">
+                                        <img src="/static/public/icons/x.svg" alt="delete" width="24" height="24">
+                                    </button>
+                                </div>
+                            {{ end }}
+                        </div>
+                    {{ else }}
+                        <p class="details-empty">
+                            No invites created
+                        </p>
+                    {{ end }}
+                </details>
+            </div>
+        {{ end }}
+    </div>
+    <div class="modal-footer">
+        {{ if .IsEdit }}
+            <button class="reset button" type="submit" form="leave-form">
+                Leave
+            </button>
+        {{ end }}
+        <button type="submit">
+            {{ if .IsEdit }}Save{{ else }}Create{{ end }}
+        </button>
+    </div>
+</form>

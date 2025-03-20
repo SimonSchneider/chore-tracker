@@ -4,22 +4,27 @@ body {
     font-family: Arial, sans-serif;
 }
 
-button {
+button, .button {
     all: unset;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
 }
 
 main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 1rem 0 1rem;
+    margin: 0 1rem 0 1rem;
 }
 
 header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 2rem 0 2rem;
+    margin: 0 1rem 0 1rem;
 }
 
 .nav {
@@ -30,6 +35,7 @@ header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
+    gap: 1rem;
 }
 
 .nav-left {
@@ -55,11 +61,7 @@ ul {
     list-style-type: none;
 }
 
-.icon-button {
-    padding: 3px;
-}
-
-button {
+button, .button {
     padding: 0.5rem 1rem;
     margin: 0;
     flex-grow: 0;
@@ -70,17 +72,41 @@ button {
     border-radius: 0.5rem;
 }
 
-button[type="reset"] {
+button:disabled {
     background-color: var(--color-secondary);
 }
 
-button:hover, button:focus {
+button:not([disabled]) {
+    cursor: pointer;
+}
+
+.icon-button {
+    padding: var(--button-padding);
+}
+
+.adorned-button {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    padding-left: 0.5rem;
+    margin: 0;
+    background-color: var(--color-primary);
+    color: black;
+    border-radius: 0.5rem;
+}
+
+.reset {
+    background-color: var(--color-secondary);
+}
+
+button:not([disabled]):hover, button:not([disabled]):focus, .button:hover, .button:focus {
     background-color: var(--color-highlight);
     outline: none;
     cursor: pointer;
 }
 
-button:active {
+button:not([disabled]):active, .button:active {
     background-color: var(--color-bold);
 }
 
@@ -88,7 +114,16 @@ button:active {
     width: 100%;
     display: flex;
     flex-direction: column;
-    /*padding: 0 1rem;*/
+    justify-self: center;
+}
+
+.list-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-self: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 .group {
@@ -120,6 +155,8 @@ details summary {
     display: flex;
     cursor: pointer;
     margin: 0;
+    align-items: center;
+    height: 2rem;
     padding: 0.5rem 0.5rem;
 }
 
@@ -143,25 +180,27 @@ details summary :first-child {
 hr {
     border: 0;
     border-top: 1px solid var(--color-muted);
-    margin: 0.2rem 0;
+    margin: 0;
+    /*margin: 0.2rem 0;*/
 }
 
 .chore-container {
     display: flex;
     flex-direction: row;
+    height: 2rem;
     justify-content: space-between;
-    align-items: center;
     padding: 0.3rem 0.5rem;
     background-color: var(--color-accent);
-    margin: 0.5rem 0.5rem;
+    /*margin: 0.5rem 0.5rem;*/
     border-radius: 0.5rem;
+    align-items: stretch;
 }
 
-.chore-container > p {
+.chore-container > p, a {
     margin: 0;
 }
 
-.chore-container p {
+.chore-container p, a {
     flex-grow: 1;
     margin: 0;
     padding: 0 1rem
@@ -169,6 +208,7 @@ hr {
 
 .chore-container .name {
     flex-grow: 8;
+    align-content: center;
 }
 
 @media (min-width: 550px) {
@@ -190,6 +230,7 @@ hr {
     --color-tertiary: #999;
     --color-highlight: lightpink;
     --color-bold: hotpink;
+    --button-padding: 3px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -238,6 +279,27 @@ body:has(dialog[open]) {
     /*position: fixed;*/
 }
 
+summary::marker {
+    display: none;
+}
+
+summary::before {
+    content: "";
+    display: inline-block;
+    width: 16px; /* Adjust as needed */
+    height: 16px;
+    background-image: url("/static/public/icons/chevron-right.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    /*content: "▶";*/
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+details[open] summary::before {
+    transform: rotate(90deg);
+}
+
 #modal > .modal-underlay {
     /* underlay takes up the entire viewport. This is only
     required if you want to click to dismiss the popup */
@@ -254,7 +316,7 @@ body:has(dialog[open]) {
 
     /* Sizing for visible dialog */
     width: 80%;
-    max-width: 600px;
+    max-width: 500px;
 
     /* Display properties for visible dialog*/
     border-radius: 8px;
@@ -289,11 +351,20 @@ article {
     background-color: var(--color-background);
 }
 
-.modal-header, .modal-footer {
+.modal-header, .modal-sub-header, .modal-footer {
     display: flex;
+    align-items: center;
+    flex-direction: row;
     justify-content: space-between;
     margin: 0;
-    padding: 0.5rem 0 0;
+}
+
+.modal-header {
+    padding: 0.5rem 0 0 0;
+}
+
+.modal-footer {
+    padding: 0 0 0.5rem 0;
 }
 
 .modal-footer:has(> :only-child) {
@@ -304,16 +375,17 @@ article {
     /*outline: 1px solid var(--color-bold);*/
 }
 
-.modal-header > h2 {
+.modal-header > h2, h3 {
     margin: 0;
     padding: 0;
 }
 
 .modal-body {
-    margin: 1rem 0 0;
+    margin: 1.5rem 0 1.5rem 0;
     display: flex;
     flex-direction: column;
     padding: 0;
+    gap: 1.5rem
 }
 
 fieldset {
@@ -325,6 +397,29 @@ fieldset {
     margin: 0;
     padding: 0;
     gap: 0.5rem;
+}
+
+.login-form {
+    display: grid;
+    grid-gap: 1rem;
+    grid-template-columns: [label] auto [input] 1fr;
+}
+
+.login-form > label {
+    grid-column: label;
+    align-self: center;
+}
+
+.login-form > input {
+    grid-column: input;
+    align-self: center;
+    justify-self: left;
+}
+
+.login-form > button[type="submit"] {
+    grid-column: 1 / -1;
+    align-self: center;
+    justify-self: center;
 }
 
 input {
@@ -346,6 +441,10 @@ input[type="submit"] {
     border-radius: 0.5rem;
     padding: 0.5rem;
     margin: 0.5rem 0;
+}
+
+input[type=checkbox] {
+    accent-color: var(--color-primary);
 }
 
 @keyframes fadeIn {

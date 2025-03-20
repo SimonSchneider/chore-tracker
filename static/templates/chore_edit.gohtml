@@ -1,0 +1,35 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/core.ChoreEditView*/ -}}
+{{ if .IsEdit }}
+    <form id="delete-form" method="post" action="/chores/{{.Chore.ID}}/delete?next={{.PrevPath}}">
+        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
+    </form>
+{{ end }}
+<form method="post" {{if .IsEdit }} action="/chores/{{.Chore.ID}}?next={{.PrevPath}}" {{ else }} action="/chores/" {{ end }}>
+    <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
+    <div class="modal-body">
+        <fieldset role="group">
+            <input name="choreListID" type="hidden" value="{{.Chore.ChoreListID}}"/>
+            <input autofocus id="new-chore-name-input" aria-label="chore name" type="text"
+                   placeholder="name"
+                   style="flex-grow: 8"
+                   value="{{.Chore.Name}}"
+                   name="name"/>
+            <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d"
+                   value="{{.Chore.Interval.String}}" name="interval"/>
+        </fieldset>
+    </div>
+    <div class="modal-footer">
+        {{if .IsEdit}}
+            <button type="submit" form="delete-form" class="reset" aria-label="Delete">
+                Delete
+            </button>
+        {{end}}
+        <button type="submit">
+            {{if .IsEdit}}
+                Save
+            {{else}}
+                Create
+            {{end}}
+        </button>
+    </div>
+</form>

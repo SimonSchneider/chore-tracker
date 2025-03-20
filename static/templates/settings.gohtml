@@ -1,0 +1,45 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.SettingsView*/ -}}
+<div class="container">
+    <p>UserID: {{.UserID}}</p>
+    <details open>
+        <summary>
+            <span>Password auths</span>
+            <span class="secondary-text">{{len .Usernames}}</span>
+        </summary>
+        <div class="list-container">
+            {{ range .Usernames }}
+                <div class="chore-container">
+                    <p class="name">{{ . }}</p>
+                </div>
+            {{ end }}
+        </div>
+    </details>
+    <hr/>
+    <details open>
+        <summary>
+            <span>Invites</span>
+            <span class="secondary-text">{{len .CreatedInvites}}</span>
+        </summary>
+        <div class="list-container">
+            {{ range .CreatedInvites }}
+                <div class="chore-container">
+                    <a class="name" href="/invites/{{ .ID }}">{{ .ID }}</a>
+                    {{ if .ChoreListName.Valid }}
+                        <p class="secondary-text">{{ .ChoreListName.String }}</p>
+                    {{ end }}
+                    {{/*                    TODO: Fix this delete button */}}
+                    <form method="post" action="/invites/{{ .ID }}/delete?next={{$.CurrPath}}">
+                        <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
+                        <button class="icon-button" aria-label="delete" type="submit">
+                            <img src="/static/public/icons/x.svg" alt="delete" width="24" height="24">
+                        </button>
+                    </form>
+                </div>
+            {{ else }}
+                <p class="details-empty">
+                    No invites created
+                </p>
+            {{ end }}
+        </div>
+    </details>
+</div>

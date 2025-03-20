@@ -1,0 +1,29 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
+<nav class="nav">
+    <ul class="nav-left">
+        <li>
+            <div class="group">
+                <a href="/chore-lists/" class="icon-button button">
+                    <img alt="back" src="/static/public/icons/arrow-left.svg" width="24" height="24"/>
+                </a>
+            </div>
+        </li>
+    </ul>
+    <h1>{{ .List.Name }}</h1>
+    <ul class="nav-right">
+        <li>
+            <div class="group">
+                <a href="/chore-lists/{{.List.ID}}/edit?prev={{.CurrPath}}" class="button icon-button">
+                    <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>
+                </a>
+                <a href="/settings?prev={{.CurrPath}}" class="icon-button button">
+                    <img alt="settings" src="/static/public/icons/settings.svg" width="24" height="24"/>
+                </a>
+                <a href="/chore-lists/{{.List.ID}}/chores/new?prev={{.CurrPath}}"
+                   class="icon-button button">
+                    <img alt="create chore" src="/static/public/icons/plus.svg" width="24" height="24"/>
+                </a>
+            </div>
+        </li>
+    </ul>
+</nav>

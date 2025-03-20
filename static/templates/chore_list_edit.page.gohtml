@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+{{ template "head.gohtml" "Chores" }}
+<body>
+<header>
+    <nav class="nav">
+        <ul class="nav-left">
+            <li>
+                <div class="group">
+                    <a href="{{ or .RequestDetails.PrevPath "/chore-lists/" }}" class="icon-button button">
+                        <img alt="chore lists" src="/static/public/icons/arrow-left.svg" width="24" height="24"/>
+                    </a>
+                </div>
+            </li>
+        </ul>
+        {{ if .List.ID }}
+            <h1>Edit Chore list</h1>
+        {{ else }}
+            <h1>Create Chore list</h1>
+        {{ end }}
+        <ul class="nav-right">
+        </ul>
+    </nav>
+</header>
+<main>
+    <div class="container">
+        {{ template "chore_list_edit.gohtml" . }}
+    </div>
+</main>
+</body>
+</html>

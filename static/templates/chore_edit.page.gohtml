@@ -1,0 +1,32 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/core.ChoreEditView*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+{{ template "head.gohtml" "Create Chore" }}
+<body>
+<header>
+    <nav class="nav">
+        <ul class="nav-left">
+            <li>
+                <div class="group">
+                    <a href="{{ or .PrevPath "/chore-lists/" }}" class="icon-button button">
+                        <img alt="chore lists" src="/static/public/icons/arrow-left.svg" width="24" height="24"/>
+                    </a>
+                </div>
+            </li>
+        </ul>
+        {{ if .IsEdit }}
+            <h1>Edit Chore</h1>
+        {{ else }}
+            <h1>Create Chore</h1>
+        {{ end }}
+        <ul class="nav-right">
+        </ul>
+    </nav>
+</header>
+<main>
+    <div class="container">
+        {{ template "chore_edit.gohtml" . }}
+    </div>
+</main>
+</body>
+</html>
