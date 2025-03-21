@@ -9,14 +9,16 @@
     <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     <div class="modal-body">
         <fieldset class="group" style="align-self: center" form="select-type-form" onchange="this.form.submit()">
-            <label class="button">
+            <label class="button adorned-button">
                 <input type="radio" form="select-type-form" name="chore-type" value="repeating"
                        {{if .IsRepeating}}checked{{end}}/>
+                <img alt="repeating" src="/static/public/icons/repeat.svg" width="24" height="24"/>
                 Repeating
             </label>
-            <label class="button">
+            <label class="button adorned-button">
                 <input type="radio" form="select-type-form" name="chore-type" value="one-time"
                        {{if .IsOneTime}}checked{{end}}/>
+                <img alt="one-time" src="/static/public/icons/circle-number-1.svg" width="24" height="24"/>
                 One time
             </label>
         </fieldset>
@@ -41,11 +43,11 @@
     </div>
     <div class="modal-footer">
         {{if .IsEdit}}
-            <button type="submit" form="delete-form" class="reset" aria-label="Delete">
+            <button type="submit" form="delete-form" class="reset button" aria-label="Delete">
                 Delete
             </button>
         {{end}}
-        <button type="submit">
+        <button class="button" type="submit">
             {{if .IsEdit}}
                 Save
             {{else}}

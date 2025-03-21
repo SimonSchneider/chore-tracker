@@ -52,10 +52,22 @@
                                 <p class="name">
                                     {{ .Name }}
                                 </p>
+                                {{/*                                {{ if eq .RepeatsLeft 1 }}*/}}
+                                {{/*                                    <div class="dot" style="flex-shrink: 0"></div>*/}}
+                                {{/*                                {{ end }}*/}}
                                 <p class="secondary-text">
                                     {{.DurationToNext }}
                                 </p>
 
+                                <div class="icon-info">
+                                    {{ if .IsOneTime }}
+                                        <img src="/static/public/icons/circle-number-1.svg" alt="repeat" width="24"
+                                             height="24"/>
+                                    {{ else if .IsRepeating }}
+                                        <img src="/static/public/icons/repeat.svg" alt="more" width="24"
+                                             height="24"/>
+                                    {{ end }}
+                                </div>
                                 <div class="group">
                                     <a href="/chores/{{ .ID }}/edit?prev={{ $.CurrPath }}" class="icon-button button">
                                         <img src="/static/public/icons/pencil.svg" alt="edit" width="24" height="24"/>

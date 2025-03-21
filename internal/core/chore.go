@@ -27,6 +27,14 @@ func (c *Chore) ChoreType() string {
 	return "repeating"
 }
 
+func (c Chore) IsOneTime() bool {
+	return c.Interval == 0
+}
+
+func (c Chore) IsRepeating() bool {
+	return c.Interval != 0
+}
+
 func (c *Chore) NextCompletion() date.Date {
 	if c.LastCompletion.IsZero() {
 		return c.CreatedAt.Add(c.SnoozedFor)
