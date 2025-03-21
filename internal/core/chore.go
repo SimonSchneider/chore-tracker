@@ -6,13 +6,25 @@ import (
 )
 
 type Chore struct {
-	ID             string        `json:"id,omitempty"`
-	Name           string        `json:"name,omitempty"`
-	CreatedAt      date.Date     `json:"created_at,omitempty"`
-	Interval       date.Duration `json:"interval,omitempty"`
-	LastCompletion date.Date     `json:"last_completion,omitempty"`
-	SnoozedFor     date.Duration `json:"znoozed_for,omitempty"`
-	ChoreListID    string        `json:"choreListID,omitempty"`
+	ID             string
+	Name           string
+	CreatedAt      date.Date
+	Interval       date.Duration
+	LastCompletion date.Date
+	SnoozedFor     date.Duration
+	ChoreListID    string
+	RepeatsLeft    int64 // -1 means infinite
+}
+
+func (c *Chore) Repeats() bool {
+	return c.RepeatsLeft > 0
+}
+
+func (c *Chore) ChoreType() string {
+	if c.Interval == 0 {
+		return "one-time"
+	}
+	return "repeating"
 }
 
 func (c *Chore) NextCompletion() date.Date {
@@ -39,5 +51,6 @@ func ChoreFromDb(row cdb.Chore) Chore {
 		LastCompletion: date.Date(row.LastCompletion),
 		SnoozedFor:     date.Duration(row.SnoozedFor),
 		ChoreListID:    row.ChoreListID,
+		RepeatsLeft:    row.RepeatsLeft,
 	}
 }

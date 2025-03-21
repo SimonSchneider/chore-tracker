@@ -7,23 +7,42 @@ import (
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
 	"net/http"
+	"strconv"
 )
 
 type Input struct {
-	Name        string        `json:"name"`
-	ChoreListID string        `json:"chore_list_id"`
-	Interval    date.Duration `json:"interval"`
+	Name        string
+	ChoreListID string
+	Interval    date.Duration
+	Repeats     int64
+}
+
+func parse[T any](into *T, parser func(string) (T, error), val string, ifEmpty T) error {
+	if val == "" {
+		*into = ifEmpty
+		return nil
+	}
+	parsed, err := parser(val)
+	if err != nil {
+		return fmt.Errorf("illegal value '%s': %w", val, err)
+	}
+	*into = parsed
+	return nil
+}
+
+func parseInt(val string) (int64, error) {
+	return strconv.ParseInt(val, 10, 64)
 }
 
 func (i *Input) FromForm(r *http.Request) error {
 	i.Name = r.FormValue("name")
 	i.ChoreListID = r.FormValue("choreListID")
-	interVal := r.FormValue("interval")
-	inter, err := date.ParseDuration(interVal)
-	if err != nil {
-		return fmt.Errorf("illegal interval '%s': %w", interVal, err)
+	if err := parse(&i.Interval, date.ParseDuration, r.FormValue("interval"), 0); err != nil {
+		return fmt.Errorf("invalid interval: %w", err)
 	}
-	i.Interval = inter
+	if err := parse(&i.Repeats, parseInt, r.FormValue("repeats"), -1); err != nil {
+		return fmt.Errorf("invalid repeats: %w", err)
+	}
 	return nil
 }
 
@@ -52,8 +71,8 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, inp
 	if input.Name == "" {
 		return nil, fmt.Errorf("illegal empty name for new chore")
 	}
-	if input.Interval.Zero() {
-		return nil, fmt.Errorf("chore interval can't be zero")
+	if input.Interval.Zero() && input.Repeats < 1 {
+		return nil, fmt.Errorf("chore interval can't be zero if there are no repeats")
 	}
 	row, err := cdb.New(db).CreateChore(ctx, cdb.CreateChoreParams{
 		ID:          NewId(),
@@ -61,6 +80,7 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, inp
 		CreatedAt:   int64(today),
 		ChoreListID: input.ChoreListID,
 		Interval:    int64(input.Interval),
+		RepeatsLeft: input.Repeats,
 		CreatedBy:   userID,
 	})
 	if err != nil {
@@ -78,9 +98,10 @@ func Update(ctx context.Context, db *sql.DB, id string, input Input) (*Chore, er
 		return nil, fmt.Errorf("illegal empty name or interval for updating chore")
 	}
 	dbChore, err := cdb.New(db).UpdateChore(ctx, cdb.UpdateChoreParams{
-		ID:       id,
-		Name:     input.Name,
-		Interval: int64(input.Interval),
+		ID:          id,
+		Name:        input.Name,
+		Interval:    int64(input.Interval),
+		RepeatsLeft: input.Repeats,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("updating chore: %w", err)

@@ -87,10 +87,11 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 			Store:         auth.NewInMemoryTokenStore(),
 		},
 		RefreshCookie: auth.CookieConfig{
-			Name:        "chore_refresh_session",
-			Expire:      24 * time.Hour * 30,
-			TokenLength: 102,
-			Store:       &DBTokenStore{DB: db},
+			Name:          "chore_refresh_session",
+			Expire:        24 * time.Hour * 30,
+			RefreshMargin: 24 * time.Hour,
+			TokenLength:   102,
+			Store:         &DBTokenStore{DB: db},
 		},
 	}
 

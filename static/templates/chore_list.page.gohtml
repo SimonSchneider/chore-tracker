@@ -22,29 +22,29 @@
                     <div class="list-container">
                         {{range .Chores}}
                             <div class="chore-container" id="chore-{{.ID}}">
-                                <form id="complete-form" method="post"
-                                      action="/chores/{{.ID}}/complete?nkext={{ $.CurrPath }}">
+                                <form id="complete-{{.ID}}-form" method="post"
+                                      action="/chores/{{.ID}}/complete?next={{ $.CurrPath }}">
                                     <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                                 </form>
-                                <form id="expedite-form" method="post"
+                                <form id="expedite-{{.ID}}-form" method="post"
                                       action="/chores/{{.ID}}/expedite?next={{ $.CurrPath }}">
                                     <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                                 </form>
-                                <form id="snooze-form" method="post"
+                                <form id="snooze-{{.ID}}-form" method="post"
                                       action="/chores/{{.ID}}/snooze?next={{ $.CurrPath }}">
                                     <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                                 </form>
                                 <div class="group">
-                                    <button class="icon-button" type="submit" form="complete-form">
+                                    <button class="icon-button" type="submit" form="complete-{{.ID}}-form">
                                         <img src="/static/public/icons/check.svg" alt="complete" width="24" height="24">
                                     </button>
                                     {{ if gt .DurationToNext 0 }}
-                                        <button class="icon-button" type="submit" form="expedite-form">
+                                        <button class="icon-button" type="submit" form="expedite-{{.ID}}-form">
                                             <img src="/static/public/icons/arrow-up.svg" alt="delete" width="24"
                                                  height="24">
                                         </button>
                                     {{ else }}
-                                        <button class="icon-button" type="submit" form="snooze-form">
+                                        <button class="icon-button" type="submit" form="snooze-{{.ID}}-form">
                                             <img src="/static/public/icons/zzz.svg" alt="delete" width="24" height="24">
                                         </button>
                                     {{ end }}

@@ -8,16 +8,15 @@ WHERE chore.id = ?
 
 -- name: CreateChore :one
 INSERT INTO chore
-(id, name, interval, created_at, last_completion, snoozed_for, chore_list_id, created_by)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING *;
+(id, name, interval, created_at, last_completion, snoozed_for, repeats_left, chore_list_id, created_by)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: UpdateChore :one
 UPDATE chore
-SET name     = ?,
-    interval = ?
-WHERE id = ?
-RETURNING *;
+SET name         = ?,
+    interval     = ?,
+    repeats_left = ?
+WHERE id = ? RETURNING *;
 
 -- name: DeleteChore :exec
 DELETE
@@ -27,6 +26,7 @@ WHERE id = ?;
 -- name: CompleteChore :exec
 UPDATE chore
 SET last_completion = ?,
+    repeats_left    = max(-1, repeats_left - 1),
     snoozed_for     = 0
 WHERE id = ?;
 
@@ -44,6 +44,7 @@ WHERE id = ?;
 SELECT *
 FROM chore
 WHERE chore_list_id = ?
+  AND NOT repeats_left = 0
 ORDER BY last_completion DESC, name, id;
 
 -- name: GetChoreListByUser :one
@@ -61,8 +62,8 @@ WHERE clm.chore_list_id = ?;
 
 -- name: GetChoreListsByUser :many
 SELECT cl.*,
-       (SELECT COUNT(*) FROM chore WHERE chore_list_id = cl.id)              AS chore_count,
-       (SELECT COUNT(*) FROM chore_list_members WHERE chore_list_id = cl.id) AS member_count
+       (SELECT COUNT(*) FROM chore WHERE chore_list_id = cl.id AND NOT repeats_left = 0) AS chore_count,
+       (SELECT COUNT(*) FROM chore_list_members WHERE chore_list_id = cl.id)             AS member_count
 FROM chore_list cl
          JOIN chore_list_members clm ON cl.id = clm.chore_list_id
 WHERE clm.user_id = ?
@@ -71,16 +72,14 @@ ORDER BY cl.name;
 -- name: CreateChoreList :one
 INSERT INTO chore_list
     (id, name, created_at, updated_at)
-VALUES (?, ?, ?, ?)
-RETURNING *;
+VALUES (?, ?, ?, ?) RETURNING *;
 
 -- name: UpdateChoreList :one
 UPDATE chore_list
 SET name       = ?,
     updated_at = ?
 WHERE id = ?
-  AND id IN (SELECT chore_list_id FROM chore_list_members WHERE user_id = ?)
-RETURNING *;
+  AND id IN (SELECT chore_list_id FROM chore_list_members WHERE user_id = ?) RETURNING *;
 
 -- name: RemoveUserFromChoreList :exec
 DELETE

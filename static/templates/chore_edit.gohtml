@@ -4,18 +4,39 @@
         <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     </form>
 {{ end }}
+<form id="select-type-form" method="get"><input type="hidden" name="prev" value="{{.PrevPath}}"></form>
 <form method="post" {{if .IsEdit }} action="/chores/{{.Chore.ID}}?next={{.PrevPath}}" {{ else }} action="/chores/" {{ end }}>
     <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     <div class="modal-body">
-        <fieldset role="group">
-            <input name="choreListID" type="hidden" value="{{.Chore.ChoreListID}}"/>
+        <fieldset class="group" style="align-self: center" form="select-type-form" onchange="this.form.submit()">
+            <label class="button">
+                <input type="radio" form="select-type-form" name="chore-type" value="repeating"
+                       {{if .IsRepeating}}checked{{end}}/>
+                Repeating
+            </label>
+            <label class="button">
+                <input type="radio" form="select-type-form" name="chore-type" value="one-time"
+                       {{if .IsOneTime}}checked{{end}}/>
+                One time
+            </label>
+        </fieldset>
+        <input name="choreListID" type="hidden" value="{{.Chore.ChoreListID}}"/>
+        {{ if .IsOneTime }}
+            <input type="hidden" name="interval" value=""/>
+            <input type="hidden" name="repeats" value="1"/>
+        {{ end }}
+        <fieldset role="group" class="group">
             <input autofocus id="new-chore-name-input" aria-label="chore name" type="text"
                    placeholder="name"
                    style="flex-grow: 8"
                    value="{{.Chore.Name}}"
                    name="name"/>
-            <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d"
-                   value="{{.Chore.Interval.String}}" name="interval"/>
+            {{ if .IsRepeating }}
+                <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d"
+                       value="{{.Chore.Interval.String}}" name="interval"/>
+                <input style="width: 4em" aria-label="chore repeats" type="number" placeholder="repeats"
+                       value="{{ .RepeatsValue }}" name="repeats"/>
+            {{ end }}
         </fieldset>
     </div>
     <div class="modal-footer">

@@ -159,7 +159,7 @@ func ChoreListEditPage(db *sql.DB, view *View) http.Handler {
 func ChoreListNewChorePage(view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		choreListID := r.PathValue("choreListID")
-		return view.ChoreCreatePage(w, r, ChoreEditView{Chore: Chore{ChoreListID: choreListID}})
+		return view.ChoreCreatePage(w, r, ChoreEditView{Chore: Chore{ChoreListID: choreListID}, ChoreType: r.FormValue("chore-type")})
 	})
 }
 

@@ -188,7 +188,7 @@ func (c *Config) Middleware(allowUnauthenticated, followRedirect bool) srvu.Midd
 				http.Redirect(w, r, fmt.Sprintf("%s?%s=%s", c.refreshPath(), c.redirectParam(), r.URL.Path), http.StatusSeeOther)
 			} else {
 				if refresh {
-					if err := c.SessionCookie.generateStoreAndSetSessionCookie(r.Context(), session.UserID, c.refreshCookiePath(), w); err != nil {
+					if err := c.SessionCookie.generateStoreAndSetSessionCookie(r.Context(), session.UserID, c.sessionCookiePath(), w); err != nil {
 						srvu.GetLogger(r.Context()).Printf("failed to refresh session cookie: %v", err)
 					}
 				}
@@ -251,8 +251,7 @@ func (c *CookieConfig) verifyToken(r *http.Request, now time.Time) (Session, boo
 	if !ok {
 		return Session{}, false, fmt.Errorf("invalid cookie")
 	}
-	exp := timeMin(cookie.Expires, session.ExpiresAt)
-	return session, now.Add(c.RefreshMargin).After(exp), nil
+	return session, now.Add(c.RefreshMargin).After(session.ExpiresAt), nil
 }
 
 func (c *CookieConfig) deleteCookie(w http.ResponseWriter, path string) {

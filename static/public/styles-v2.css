@@ -4,8 +4,12 @@ body {
     font-family: Arial, sans-serif;
 }
 
-button, .button {
+button, .button, .icon-button {
     all: unset;
+}
+
+input[type="radio"] {
+    display: none;
 }
 
 a {
@@ -61,7 +65,7 @@ ul {
     list-style-type: none;
 }
 
-button, .button {
+button, .button, .icon-button {
     padding: 0.5rem 1rem;
     margin: 0;
     flex-grow: 0;
@@ -72,15 +76,17 @@ button, .button {
     border-radius: 0.5rem;
 }
 
-button:disabled {
+button:disabled, .button:disabled, .icon-button:disabled {
     background-color: var(--color-secondary);
 }
 
-button:not([disabled]) {
+button:not([disabled]), .button:not([disabled]), .icon-button:not([disabled]) {
     cursor: pointer;
 }
 
 .icon-button {
+    width: 2rem;
+    height: 2rem;
     padding: var(--button-padding);
 }
 
@@ -100,13 +106,13 @@ button:not([disabled]) {
     background-color: var(--color-secondary);
 }
 
-button:not([disabled]):hover, button:not([disabled]):focus, .button:hover, .button:focus {
+button:not([disabled]):hover, button:not([disabled]):focus, .button:hover, .button:focus, .icon-button:hover, .icon-button:focus, label.button:has(input[type="radio"]:checked) {
     background-color: var(--color-highlight);
     outline: none;
     cursor: pointer;
 }
 
-button:not([disabled]):active, .button:active {
+button:not([disabled]):active, .button:active, .icon-button:active {
     background-color: var(--color-bold);
 }
 
@@ -129,26 +135,29 @@ button:not([disabled]):active, .button:active {
 .group {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    /*justify-content: space-between;*/
     align-items: center;
     padding: 0;
     margin: 0;
+    gap: 0;
 }
 
-.group .icon-button {
+.group > * {
     border-radius: 0;
+}
+
+.group > :not(:last-child) {
     border-right: solid 1px var(--color-muted);
 }
 
-.group .icon-button:first-child {
+.group > *:first-child {
     border-top-left-radius: 0.5rem;
     border-bottom-left-radius: 0.5rem;
 }
 
-.group .icon-button:last-child {
+.group > *:last-child {
     border-top-right-radius: 0.5rem;
     border-bottom-right-radius: 0.5rem;
-    border-right: 0
 }
 
 details summary {
@@ -187,13 +196,13 @@ hr {
 .chore-container {
     display: flex;
     flex-direction: row;
-    height: 2rem;
+    height: 2.5rem;
     justify-content: space-between;
     padding: 0.3rem 0.5rem;
     background-color: var(--color-accent);
     /*margin: 0.5rem 0.5rem;*/
     border-radius: 0.5rem;
-    align-items: stretch;
+    align-items: center;
 }
 
 .chore-container > p, a {

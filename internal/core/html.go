@@ -37,7 +37,11 @@ func ChoreEditPage(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		return view.ChoreEditPage(w, r, ChoreEditView{Chore: *ch})
+		choreType := r.FormValue("chore-type")
+		if choreType == "" {
+			choreType = ch.ChoreType()
+		}
+		return view.ChoreEditPage(w, r, ChoreEditView{Chore: *ch, ChoreType: choreType})
 	})
 }
 

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"github.com/SimonSchneider/goslu/templ"
@@ -98,11 +99,27 @@ func (v *View) ChoreModal(w http.ResponseWriter, r *http.Request, d *Chore) erro
 
 type ChoreEditView struct {
 	*RequestDetails
-	Chore Chore
+	Chore     Chore
+	ChoreType string
 }
 
 func (c ChoreEditView) IsEdit() bool {
 	return c.Chore.ID != ""
+}
+
+func (c ChoreEditView) IsRepeating() bool {
+	return c.ChoreType == "repeating" || c.ChoreType == ""
+}
+
+func (c ChoreEditView) IsOneTime() bool {
+	return c.ChoreType == "one-time"
+}
+
+func (c ChoreEditView) RepeatsValue() string {
+	if c.Chore.RepeatsLeft < 1 {
+		return ""
+	}
+	return fmt.Sprintf("%d", c.Chore.RepeatsLeft)
 }
 
 func (v *View) ChoreEditPage(w http.ResponseWriter, r *http.Request, d ChoreEditView) error {
