@@ -107,12 +107,20 @@ func (c ChoreEditView) IsEdit() bool {
 	return c.Chore.ID != ""
 }
 
-func (c ChoreEditView) IsRepeating() bool {
-	return c.ChoreType == "repeating" || c.ChoreType == ""
+func (c ChoreEditView) IsInterval() bool {
+	return c.ChoreType == "interval" || c.ChoreType == ""
 }
 
-func (c ChoreEditView) IsOneTime() bool {
-	return c.ChoreType == "one-time"
+func (c ChoreEditView) IsOneshot() bool {
+	return c.ChoreType == "oneshot"
+}
+
+func (c ChoreEditView) IsDate() bool {
+	return c.ChoreType == "date"
+}
+
+func (c ChoreEditView) IsDateRepeating() bool {
+	return c.ChoreType == "date-repeating"
 }
 
 func (c ChoreEditView) RepeatsValue() string {

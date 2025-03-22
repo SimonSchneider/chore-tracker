@@ -10,20 +10,32 @@
     <div class="modal-body">
         <fieldset class="group" style="align-self: center" form="select-type-form" onchange="this.form.submit()">
             <label class="button adorned-button">
-                <input type="radio" form="select-type-form" name="chore-type" value="repeating"
-                       {{if .IsRepeating}}checked{{end}}/>
-                <img alt="repeating" src="/static/public/icons/repeat.svg" width="24" height="24"/>
-                Repeating
+                <input type="radio" form="select-type-form" name="chore-type" value="interval"
+                       {{if .IsInterval}}checked{{end}}/>
+                <img alt="interval" src="/static/public/icons/repeat.svg" width="24" height="24"/>
+                Interval
             </label>
             <label class="button adorned-button">
-                <input type="radio" form="select-type-form" name="chore-type" value="one-time"
-                       {{if .IsOneTime}}checked{{end}}/>
-                <img alt="one-time" src="/static/public/icons/circle-number-1.svg" width="24" height="24"/>
-                One time
+                <input type="radio" form="select-type-form" name="chore-type" value="oneshot"
+                       {{if .IsOneshot}}checked{{end}}/>
+                <img alt="oneshot" src="/static/public/icons/circle-number-1.svg" width="24" height="24"/>
+                Once
+            </label>
+            <label class="button adorned-button disabled">
+                <input type="radio" form="select-type-form" disabled name="chore-type" value="date"
+                       {{if .IsDate}}checked{{end}}/>
+                <img alt="date" src="/static/public/icons/calendar-event.svg" width="24" height="24"/>
+                Date
+            </label>
+            <label class="button adorned-button disabled">
+                <input type="radio" form="select-type-form" disabled name="chore-type" value="date-repeating"
+                       {{if .IsDateRepeating}}checked{{end}}/>
+                <img alt="date" src="/static/public/icons/calendar-repeat.svg" width="24" height="24"/>
+                Date Repeat
             </label>
         </fieldset>
         <input name="choreListID" type="hidden" value="{{.Chore.ChoreListID}}"/>
-        {{ if .IsOneTime }}
+        {{ if .IsOneshot }}
             <input type="hidden" name="interval" value=""/>
             <input type="hidden" name="repeats" value="1"/>
         {{ end }}
@@ -33,7 +45,7 @@
                    style="flex-grow: 8"
                    value="{{.Chore.Name}}"
                    name="name"/>
-            {{ if .IsRepeating }}
+            {{ if .IsInterval }}
                 <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d"
                        value="{{.Chore.Interval.String}}" name="interval"/>
                 <input style="width: 4em" aria-label="chore repeats" type="number" placeholder="repeats"

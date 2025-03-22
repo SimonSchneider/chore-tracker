@@ -6,12 +6,62 @@ import (
 	"fmt"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
+	"github.com/SimonSchneider/chore-tracker/pkg/httpu"
 	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/sqlu"
 	"github.com/SimonSchneider/goslu/srvu"
 	"net/http"
+	"sort"
 	"time"
 )
+
+type ListView struct {
+	Chores []Chore
+	Today  date.Date
+}
+
+func NewListView(today date.Date, chores []Chore) *ListView {
+	sort.Slice(chores, func(i, j int) bool {
+		return chores[i].NextCompletion().Before(chores[j].NextCompletion())
+	})
+	return &ListView{Chores: chores, Today: today}
+}
+
+func (v *ListView) Sections() []Section {
+	sections := []Section{
+		{Title: "Overdue", LatestCompletion: -1 * date.Day},
+		{Title: "Today", LatestCompletion: date.Zero},
+		{Title: "Tomorrow", LatestCompletion: date.Day},
+		{Title: "This week", LatestCompletion: date.Week},
+		{Title: "This month", LatestCompletion: 1 * date.Month},
+		{Title: "Later", LatestCompletion: date.Max},
+	}
+	j := 0
+	for i := range sections {
+		for ; j < len(v.Chores); j++ {
+			if v.Chores[j].DurationToNextFrom(v.Today) <= sections[i].LatestCompletion {
+				sections[i].Chores = append(sections[i].Chores, v.Chores[j])
+			} else {
+				break
+			}
+		}
+	}
+	return sections
+}
+
+type Section struct {
+	Title            string
+	LatestCompletion date.Duration
+	Chores           []Chore
+}
+
+func (s *Section) HasChores() bool {
+	return len(s.Chores) > 0
+}
+
+func (s *Section) IsOpen() bool {
+	return s.HasChores() && s.LatestCompletion <= date.Week
+}
 
 func ChoreListNewPage(view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -72,7 +122,7 @@ func ChoreListUpdateHandler(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		redirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", id))
+		httpu.RedirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", id))
 		return nil
 	})
 }
@@ -88,7 +138,7 @@ func ChoreListLeaveHandler(db *sql.DB, view *View) http.Handler {
 		if err := q.RemoveUserFromChoreList(ctx, cdb.RemoveUserFromChoreListParams{UserID: userID, ChoreListID: id}); err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		redirectToNext(w, r, "/chore-lists")
+		httpu.RedirectToNext(w, r, "/chore-lists")
 		return nil
 	})
 }
@@ -174,7 +224,7 @@ func ChoreListCreateInviteHandler(db *sql.DB, view *View, inviteStore *InviteSto
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		redirectToReferer(w, r, fmt.Sprintf("/chore-lists/%s/edit", choreListID))
+		httpu.RedirectToReferer(w, r, fmt.Sprintf("/chore-lists/%s/edit", choreListID))
 		return nil
 	})
 }
@@ -197,7 +247,7 @@ func ChoreListDeleteInviteHandler(db *sql.DB, view *View, inviteStore *InviteSto
 		if err := inviteStore.DeleteInviteInChoreList(ctx, inviteID, choreListID); err != nil {
 			return srvu.Err(http.StatusInternalServerError, err)
 		}
-		redirectToReferer(w, r, fmt.Sprintf("/chore-lists/%s/edit", choreListID))
+		httpu.RedirectToReferer(w, r, fmt.Sprintf("/chore-lists/%s/edit", choreListID))
 		return nil
 	})
 }

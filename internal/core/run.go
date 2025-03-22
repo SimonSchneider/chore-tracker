@@ -8,6 +8,7 @@ import (
 	choretracker "github.com/SimonSchneider/chore-tracker"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
+	"github.com/SimonSchneider/chore-tracker/pkg/httpu"
 	"github.com/SimonSchneider/goslu/config"
 	"github.com/SimonSchneider/goslu/migrate"
 	"github.com/SimonSchneider/goslu/srvu"
@@ -41,7 +42,7 @@ func Mux(db *sql.DB, view *View, authConfig auth.Config) http.Handler {
 	mux.Handle(authConfig.SessionsPath, authConfig.SessionHandler())
 	mux.Handle("GET /settings", srvu.With(SettingsPage(view, db), authConfig.Middleware(false, false)))
 
-	HandleNested(mux, "/invites/", auth.InviteHandler(inviteStore, authConfig))
+	httpu.HandleNested(mux, "/invites/", auth.InviteHandler(inviteStore, authConfig))
 	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view, inviteStore), authConfig.Middleware(false, false)))
 	mux.Handle("/chores/", srvu.With(ChoreMux(db, view), authConfig.Middleware(false, false)))
 	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
@@ -96,7 +97,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 
 	mux := http.NewServeMux()
-	HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
+	httpu.HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
 	mux.Handle("/", Mux(db, view, authConfig))
 
 	srv := &http.Server{

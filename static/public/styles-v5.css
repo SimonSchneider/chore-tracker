@@ -90,11 +90,17 @@ button, .button, .icon-button {
     border-radius: 0.5rem;
 }
 
-button:disabled, .button:disabled, .icon-button:disabled {
+button:disabled, .button:disabled, .icon-button:disabled, .adorned-button:disabled,
+button.disabled, .button.disabled, .icon-button.disabled, .adorned-button.disabled {
     background-color: var(--color-secondary);
 }
 
-button:not([disabled]), .button:not([disabled]), .icon-button:not([disabled]) {
+.disabled, .disabled:hover {
+    cursor: default;
+}
+
+button:not([disabled]), .icon-button:not([disabled]),
+button:not(.disabled), .button:not(.disabled), .icon-button:not(.disabled) {
     cursor: pointer;
 }
 
@@ -124,13 +130,13 @@ button:not([disabled]), .button:not([disabled]), .icon-button:not([disabled]) {
     background-color: var(--color-secondary);
 }
 
-button:not([disabled]):hover, button:not([disabled]):focus, .button:hover, .button:focus, .icon-button:hover, .icon-button:focus, label.button:has(input[type="radio"]:checked) {
+button:not([disabled]):hover, button:not([disabled]):focus, .button:not(.disabled):hover, .button:not(.disabled):focus, .icon-button:not(.disabled):hover, .icon-button:not(.disabled):focus {
     background-color: var(--color-highlight);
     outline: none;
     cursor: pointer;
 }
 
-button:not([disabled]):active, .button:active, .icon-button:active {
+button:not([disabled]):active, button:not(.disabled):active, .button:not(.disabled):active, .icon-button:not(.disabled):active, label.button:has(input[type="radio"]:checked) {
     background-color: var(--color-bold);
 }
 
@@ -265,8 +271,8 @@ hr {
     --color-secondary: #b3b3b3;
     --color-muted: #bfbfbf;
     --color-tertiary: #999;
-    --color-highlight: lightpink;
-    --color-bold: hotpink;
+    --color-highlight: #FFB6C1;
+    --color-bold: #FF9CAD;
     --button-padding: 3px;
 }
 
@@ -278,8 +284,8 @@ hr {
         --color-secondary: #666;
         --color-muted: #777;
         --color-tertiary: #888;
-        --color-highlight: lightpink;
-        --color-bold: hotpink;
+        --color-highlight: #FFB6C1;
+        --color-bold: #FF9CAD;
     }
 }
 

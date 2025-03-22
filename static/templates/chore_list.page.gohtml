@@ -60,10 +60,10 @@
                                 </p>
 
                                 <div class="icon-info">
-                                    {{ if .IsOneTime }}
+                                    {{ if .IsOneshot }}
                                         <img src="/static/public/icons/circle-number-1.svg" alt="repeat" width="24"
                                              height="24"/>
-                                    {{ else if .IsRepeating }}
+                                    {{ else if .IsInterval }}
                                         <img src="/static/public/icons/repeat.svg" alt="more" width="24"
                                              height="24"/>
                                     {{ end }}
