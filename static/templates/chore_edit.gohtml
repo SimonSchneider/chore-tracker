@@ -8,7 +8,7 @@
 <form method="post" {{if .IsEdit }} action="/chores/{{.Chore.ID}}?next={{.PrevPath}}" {{ else }} action="/chores/" {{ end }}>
     <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     <div class="modal-body">
-        <fieldset class="group" style="align-self: center" form="select-type-form" onchange="this.form.submit()">
+        <fieldset class="group column" form="select-type-form" onchange="this.form.submit()">
             <label class="button adorned-button">
                 <input type="radio" form="select-type-form" name="chore-type" value="interval"
                        {{if .IsInterval}}checked{{end}}/>
@@ -39,16 +39,15 @@
             <input type="hidden" name="interval" value=""/>
             <input type="hidden" name="repeats" value="1"/>
         {{ end }}
-        <fieldset role="group" class="group">
+        <fieldset role="group" class="group column nogap">
             <input autofocus id="new-chore-name-input" aria-label="chore name" type="text"
                    placeholder="name"
-                   style="flex-grow: 8"
                    value="{{.Chore.Name}}"
                    name="name"/>
             {{ if .IsInterval }}
-                <input style="width: 6em" aria-label="chore interval" type="text" placeholder="2w4d"
+                <input aria-label="chore interval" type="text" placeholder="2w4d"
                        value="{{.Chore.Interval.String}}" name="interval"/>
-                <input style="width: 4em" aria-label="chore repeats" type="number" placeholder="repeats"
+                <input aria-label="chore repeats" type="number" placeholder="repeats"
                        value="{{ .RepeatsValue }}" name="repeats"/>
             {{ end }}
         </fieldset>

@@ -80,7 +80,7 @@ ul {
 }
 
 button, .button, .icon-button {
-    padding: 0.5rem 1rem;
+    padding: var(--button-padding) 1rem;
     margin: 0;
     flex-grow: 0;
     display: flex;
@@ -119,6 +119,7 @@ button:not(.disabled), .button:not(.disabled), .icon-button:not(.disabled) {
     flex-direction: row;
     gap: 0.5rem;
     align-items: center;
+    justify-content: flex-start;
     padding-left: 0.5rem;
     margin: 0;
     background-color: var(--color-primary);
@@ -163,24 +164,47 @@ button:not([disabled]):active, button:not(.disabled):active, .button:not(.disabl
     align-items: center;
     padding: 0;
     margin: 0;
+    gap: 1px;
+}
+
+.nogap {
     gap: 0;
+}
+
+.group.column {
+    flex-direction: column;
+    align-items: stretch;
 }
 
 .group > * {
     border-radius: 0;
 }
 
-.group > :not(:last-child) {
-    border-right: solid 1px var(--color-muted);
-}
+/*.group:not(.column) > :not(:last-child) {*/
+/*    border-right: solid 1px var(--color-muted);*/
+/*}*/
 
-.group > *:first-child {
+/*.group.column > :not(:last-child) {*/
+/*    border-bottom: solid 1px var(--color-muted);*/
+/*}*/
+
+.group:not(.column) > *:first-child {
     border-top-left-radius: 0.5rem;
     border-bottom-left-radius: 0.5rem;
 }
 
-.group > *:last-child {
+.group.column > *:first-child {
+    border-top-left-radius: 0.5rem;
     border-top-right-radius: 0.5rem;
+}
+
+.group:not(.column) > *:last-child {
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.group.column > *:last-child {
+    border-bottom-left-radius: 0.5rem;
     border-bottom-right-radius: 0.5rem;
 }
 
@@ -467,9 +491,11 @@ fieldset {
 
 input {
     margin: 0;
-    padding: 0.5rem;
+    padding: var(--button-padding) 1rem;
     border: 1px solid var(--color-muted);
     border-radius: 0.5rem;
+    height: 2rem;
+    font-size: 1rem;
 }
 
 input:focus {
@@ -482,7 +508,7 @@ input[type="submit"] {
     color: var(--color-background);
     border: 0;
     border-radius: 0.5rem;
-    padding: 0.5rem;
+    padding: var(--button-padding);
     margin: 0.5rem 0;
 }
 
