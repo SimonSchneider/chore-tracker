@@ -346,6 +346,10 @@ body:has(dialog[open]) {
     /*position: fixed;*/
 }
 
+details summary::-webkit-details-marker {
+    display:none;
+}
+
 summary::marker {
     display: none;
 }
@@ -358,7 +362,6 @@ summary::before {
     background-image: url("/static/public/icons/chevron-right.svg");
     background-size: contain;
     background-repeat: no-repeat;
-    /*content: "▶";*/
     margin-right: 0.5rem;
     transition: transform 0.2s ease;
 }
