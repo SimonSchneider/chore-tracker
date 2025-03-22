@@ -55,9 +55,14 @@
 - invite page
     - nicer UI
 - invite create page (remove for now)
-- session manager according to blog
 - proper cache headers
 - etag support?
 - settings page
     - nicer UI
-  
+- add some copy for certain pages
+  - invites
+  - settings
+  - invite accept
+  - chore edit
+- date type chores
+- date recurring chores
