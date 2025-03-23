@@ -210,6 +210,51 @@ func (q *Queries) GetChoreListByUser(ctx context.Context, arg GetChoreListByUser
 	return i, err
 }
 
+const getChoreListCalendarCompletionData = `-- name: GetChoreListCalendarCompletionData :many
+SELECT ce.occurred_at, COUNT(*) AS count
+FROM chore_event ce
+    JOIN chore c
+ON ce.chore_id = c.id
+    JOIN chore_list_members clm ON c.chore_list_id = clm.chore_list_id
+WHERE clm.user_id = ?
+  AND c.chore_list_id = ?
+GROUP BY 1
+ORDER BY 1
+`
+
+type GetChoreListCalendarCompletionDataParams struct {
+	UserID      string
+	ChoreListID string
+}
+
+type GetChoreListCalendarCompletionDataRow struct {
+	OccurredAt int64
+	Count      int64
+}
+
+func (q *Queries) GetChoreListCalendarCompletionData(ctx context.Context, arg GetChoreListCalendarCompletionDataParams) ([]GetChoreListCalendarCompletionDataRow, error) {
+	rows, err := q.db.QueryContext(ctx, getChoreListCalendarCompletionData, arg.UserID, arg.ChoreListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetChoreListCalendarCompletionDataRow
+	for rows.Next() {
+		var i GetChoreListCalendarCompletionDataRow
+		if err := rows.Scan(&i.OccurredAt, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getChoreListMembers = `-- name: GetChoreListMembers :many
 SELECT u.id, u.display_name
 FROM user u

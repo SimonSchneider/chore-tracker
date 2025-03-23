@@ -1,0 +1,99 @@
+{{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.SettingsView*/ -}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{ template "head.gohtml" "Chores Settings" }}
+    <script src="/static/public/echarts.min.js"></script>
+</head>
+<body>
+<div id="main" style="width: 600px;height:400px;"></div>
+<script>
+    const chartDom = document.getElementById('main');
+    const myChart = echarts.init(chartDom, null, {
+        renderer: 'svg'
+    });
+    let option;
+
+    function getVirtualData(year) {
+        const date = +echarts.time.parse(year + '-01-01');
+        const end = +echarts.time.parse(+year + 1 + '-01-01');
+        const dayTime = 3600 * 24 * 1000;
+        const data = [];
+        for (let time = date; time < end; time += dayTime) {
+            data.push([
+                echarts.time.format(time, '{yyyy}-{MM}-{dd}', false),
+                Math.floor(Math.random() * 10000)
+            ]);
+        }
+        return data;
+    }
+
+    function getYear(d) {
+        return d.split('-')[0]
+    }
+
+    function getRange(min, max) {
+        if (min === max) {
+            return min
+        }
+        return [min, max];
+    }
+
+    function getMinMax(data) {
+        let min = Infinity;
+        let max = -Infinity;
+        for (const {value} of data) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+        return [min, max]
+    }
+
+    fetch('charts/completion_calendar')
+        .then(r => r.json())
+        .then(({data}) => {
+            if (!data) {
+                return
+            }
+            const [valMin, valMax] = getMinMax(data)
+            const rangeMin = getYear(data[0].date)
+            const rangeMax = getYear(data[data.length - 1].date)
+            const range = getRange(rangeMin, rangeMax)
+            myChart.setOption({
+                // title: {
+                //     top: 30,
+                //     left: 'center',
+                //     text: 'Daily Step Count'
+                // },
+                tooltip: {},
+                visualMap: {
+                    min: valMin,
+                    max: valMax,
+                    type: 'piecewise',
+                    orient: 'horizontal',
+                    left: 'center',
+                    top: 65
+                },
+                calendar: {
+                    top: 120,
+                    left: 30,
+                    right: 30,
+                    cellSize: ['auto', 13],
+                    range,
+                    itemStyle: {
+                        borderWidth: 0.5
+                    },
+                    yearLabel: {show: true}
+                },
+                series: {
+                    type: 'heatmap',
+                    coordinateSystem: 'calendar',
+                    data: data.map(d => [d.date, d.value])
+                }
+            })
+        })
+        .catch(console.error)
+</script>
+</body>
+</html>
+

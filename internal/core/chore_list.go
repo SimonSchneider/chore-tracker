@@ -252,6 +252,56 @@ func ChoreListDeleteInviteHandler(db *sql.DB, view *View, inviteStore *InviteSto
 	})
 }
 
+func ChoreListChartPage(db *sql.DB, view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		choreListID := r.PathValue("choreListID")
+		userID := auth.MustGetSession(ctx).UserID
+		_, err := cdb.New(db).GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{ID: choreListID, UserID: userID})
+		if err != nil {
+			return srvu.Err(http.StatusForbidden, err)
+		}
+		return view.ChoreListChartPage(w, r, ChoreListChartView{
+			ChoreListID: choreListID,
+		})
+	})
+}
+
+func ChoreListChartDataHandler(db *sql.DB, view *View) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		choreListID := r.PathValue("choreListID")
+		chartData := r.PathValue("chartType")
+		userID := auth.MustGetSession(ctx).UserID
+		if choreListID == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing choreListID"))
+		}
+		if chartData == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing chartData"))
+		}
+		switch chartData {
+		case "completion_calendar":
+			data, err := cdb.New(db).GetChoreListCalendarCompletionData(ctx, cdb.GetChoreListCalendarCompletionDataParams{
+				ChoreListID: choreListID,
+				UserID:      userID,
+			})
+			if err != nil {
+				return srvu.Err(http.StatusForbidden, err)
+			}
+			cld := &ChoreListDataView{
+				Data: make([]ChoreListDataViewSeries, 0, len(data)),
+			}
+			for _, d := range data {
+				cld.Data = append(cld.Data, ChoreListDataViewSeries{
+					Date:  date.Date(d.OccurredAt),
+					Value: d.Count,
+				})
+			}
+			return view.ChoreListChartData(w, r, cld)
+		default:
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("unknown chart type: %s", chartData))
+		}
+	})
+}
+
 func ChoreListMux(db *sql.DB, view *View, inviteStore *InviteStore) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /chore-lists/new", ChoreListNewPage(view))
@@ -262,6 +312,8 @@ func ChoreListMux(db *sql.DB, view *View, inviteStore *InviteStore) *http.ServeM
 	mux.Handle("POST /chore-lists/{choreListID}/invites/{inviteID}/delete", ChoreListDeleteInviteHandler(db, view, inviteStore))
 	mux.Handle("GET /chore-lists/{choreListID}/chores/new", ChoreListNewChorePage(view))
 	mux.Handle("GET /chore-lists/{choreListID}/edit", ChoreListEditPage(db, view))
+	mux.Handle("GET /chore-lists/{choreListID}/charts", ChoreListChartPage(db, view))
+	mux.Handle("GET /chore-lists/{choreListID}/charts/{chartType}", ChoreListChartDataHandler(db, view))
 	mux.Handle("GET /chore-lists/{choreListID}", ChoreListPage(db, view))
 	mux.Handle("GET /chore-lists/{choreListID}/", ChoreListPage(db, view))
 	mux.Handle("GET /chore-lists/{$}", ChoreListsPage(db, view))

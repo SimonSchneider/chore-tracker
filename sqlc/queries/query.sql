@@ -54,6 +54,17 @@ FROM chore_list cl
 WHERE clm.user_id = ?
   AND cl.id = ?;
 
+-- name: GetChoreListCalendarCompletionData :many
+SELECT ce.occurred_at, COUNT(*) AS count
+FROM chore_event ce
+    JOIN chore c
+ON ce.chore_id = c.id
+    JOIN chore_list_members clm ON c.chore_list_id = clm.chore_list_id
+WHERE clm.user_id = ?
+  AND c.chore_list_id = ?
+GROUP BY 1
+ORDER BY 1;
+
 -- name: GetChoreListMembers :many
 SELECT u.id, u.display_name
 FROM user u

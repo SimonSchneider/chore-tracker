@@ -1,9 +1,11 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
+	"github.com/SimonSchneider/goslu/date"
 	"github.com/SimonSchneider/goslu/templ"
 	"io"
 	"net/http"
@@ -91,6 +93,38 @@ type ChoreListView struct {
 func (v *View) ChoreListPage(w http.ResponseWriter, r *http.Request, d ChoreListView) error {
 	d.RequestDetails = &RequestDetails{req: r}
 	return v.p.ExecuteTemplate(w, "chore_list.page.gohtml", d)
+}
+
+type ChoreListChartView struct {
+	*RequestDetails
+	ChoreListID string
+}
+
+func (v *View) ChoreListChartPage(w http.ResponseWriter, r *http.Request, d ChoreListChartView) error {
+	d.RequestDetails = &RequestDetails{req: r}
+	return v.p.ExecuteTemplate(w, "chore_list_chart.page.gohtml", d)
+}
+
+type ChoreListDataViewCalendar struct {
+	Range string `json:"range"`
+}
+
+type ChoreListDataViewSeries struct {
+	Date  date.Date `json:"date"`
+	Value int64     `json:"value"`
+}
+
+type ChoreListDataView struct {
+	Data []ChoreListDataViewSeries `json:"data"`
+}
+
+func (v *View) ChoreListChartData(w http.ResponseWriter, r *http.Request, d *ChoreListDataView) error {
+	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate, private")
+	w.Header().Add("Pragma", "no-cache")
+	w.Header().Add("Expires", "0")
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	fmt.Printf("here: %v\n", d)
+	return json.NewEncoder(w).Encode(d)
 }
 
 func (v *View) ChoreModal(w http.ResponseWriter, r *http.Request, d *Chore) error {

@@ -1,7 +1,9 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.ChoreListView*/ -}}
 <!DOCTYPE html>
 <html lang="en">
+<head>
 {{ template "head.gohtml" "Chores" }}
+</head>
 <body>
 <header>
     {{ template "chore_list.nav_header.gohtml" . }}
@@ -65,6 +67,12 @@
                                              height="24"/>
                                     {{ else if .IsInterval }}
                                         <img src="/static/public/icons/repeat.svg" alt="more" width="24"
+                                             height="24"/>
+                                    {{ else if .IsDate }}
+                                        <img src="/static/public/icons/calendar-event.svg" alt="date" width="24"
+                                             height="24"/>
+                                    {{ else if .IsDateRepeating }}
+                                        <img src="/static/public/icons/calendar-repeat.svg" alt="date" width="24"
                                              height="24"/>
                                     {{ end }}
                                 </div>
