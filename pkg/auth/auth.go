@@ -57,8 +57,8 @@ func (c *Config) SessionHandler() http.Handler {
 	mux.Handle(fmt.Sprintf("DELETE %s/{$}", path.Join(prefix, "/")), c.DeleteSessionHandler())
 	return srvu.With(mux, func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("Vary", "Cookie")
-			w.Header().Add("Cache-Control", `no-cache="Set-Cookie"`)
+			w.Header().Add("Pragma", "no-cache")
+			w.Header().Add("Cache-Control", `no-cache, no-store, must-revalidate, max-age=0`)
 			handler.ServeHTTP(w, r)
 		})
 	})

@@ -45,8 +45,8 @@ func (q *Queries) CompleteChore(ctx context.Context, arg CompleteChoreParams) er
 
 const createChore = `-- name: CreateChore :one
 INSERT INTO chore
-(id, name, interval, created_at, last_completion, snoozed_for, repeats_left, chore_list_id, created_by)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by, repeats_left
+(id, name, interval, created_at, last_completion, snoozed_for, repeats_left, chore_list_id, created_by, chore_type)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by, repeats_left, chore_type
 `
 
 type CreateChoreParams struct {
@@ -59,6 +59,7 @@ type CreateChoreParams struct {
 	RepeatsLeft    int64
 	ChoreListID    string
 	CreatedBy      string
+	ChoreType      string
 }
 
 func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore, error) {
@@ -72,6 +73,7 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		arg.RepeatsLeft,
 		arg.ChoreListID,
 		arg.CreatedBy,
+		arg.ChoreType,
 	)
 	var i Chore
 	err := row.Scan(
@@ -84,6 +86,7 @@ func (q *Queries) CreateChore(ctx context.Context, arg CreateChoreParams) (Chore
 		&i.ChoreListID,
 		&i.CreatedBy,
 		&i.RepeatsLeft,
+		&i.ChoreType,
 	)
 	return i, err
 }
@@ -155,7 +158,7 @@ func (q *Queries) DeleteChore(ctx context.Context, id string) error {
 }
 
 const getChore = `-- name: GetChore :one
-SELECT chore.id, chore.name, chore.interval, chore.last_completion, chore.snoozed_for, chore.created_at, chore.chore_list_id, chore.created_by, chore.repeats_left
+SELECT chore.id, chore.name, chore.interval, chore.last_completion, chore.snoozed_for, chore.created_at, chore.chore_list_id, chore.created_by, chore.repeats_left, chore.chore_type
 FROM chore
          JOIN chore_list cl ON chore.chore_list_id = cl.id
          JOIN chore_list_members ON cl.id = chore_list_members.chore_list_id
@@ -181,6 +184,7 @@ func (q *Queries) GetChore(ctx context.Context, arg GetChoreParams) (Chore, erro
 		&i.ChoreListID,
 		&i.CreatedBy,
 		&i.RepeatsLeft,
+		&i.ChoreType,
 	)
 	return i, err
 }
@@ -340,7 +344,7 @@ func (q *Queries) GetChoreListsByUser(ctx context.Context, userID string) ([]Get
 }
 
 const getChoresByList = `-- name: GetChoresByList :many
-SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by, repeats_left
+SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by, repeats_left, chore_type
 FROM chore
 WHERE chore_list_id = ?
   AND NOT repeats_left = 0
@@ -366,6 +370,7 @@ func (q *Queries) GetChoresByList(ctx context.Context, choreListID string) ([]Ch
 			&i.ChoreListID,
 			&i.CreatedBy,
 			&i.RepeatsLeft,
+			&i.ChoreType,
 		); err != nil {
 			return nil, err
 		}
@@ -415,17 +420,21 @@ func (q *Queries) SnoozeChore(ctx context.Context, arg SnoozeChoreParams) error 
 
 const updateChore = `-- name: UpdateChore :one
 UPDATE chore
-SET name         = ?,
-    interval     = ?,
-    repeats_left = ?
-WHERE id = ? RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by, repeats_left
+SET name            = ?,
+    interval        = ?,
+    repeats_left    = ?,
+    snoozed_for     = ?,
+    last_completion = ?
+WHERE id = ? RETURNING id, name, interval, last_completion, snoozed_for, created_at, chore_list_id, created_by, repeats_left, chore_type
 `
 
 type UpdateChoreParams struct {
-	Name        string
-	Interval    int64
-	RepeatsLeft int64
-	ID          string
+	Name           string
+	Interval       int64
+	RepeatsLeft    int64
+	SnoozedFor     int64
+	LastCompletion int64
+	ID             string
 }
 
 func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) (Chore, error) {
@@ -433,6 +442,8 @@ func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) (Chore
 		arg.Name,
 		arg.Interval,
 		arg.RepeatsLeft,
+		arg.SnoozedFor,
+		arg.LastCompletion,
 		arg.ID,
 	)
 	var i Chore
@@ -446,6 +457,7 @@ func (q *Queries) UpdateChore(ctx context.Context, arg UpdateChoreParams) (Chore
 		&i.ChoreListID,
 		&i.CreatedBy,
 		&i.RepeatsLeft,
+		&i.ChoreType,
 	)
 	return i, err
 }
