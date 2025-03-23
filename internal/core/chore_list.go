@@ -256,12 +256,12 @@ func ChoreListChartPage(db *sql.DB, view *View) http.Handler {
 	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		choreListID := r.PathValue("choreListID")
 		userID := auth.MustGetSession(ctx).UserID
-		_, err := cdb.New(db).GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{ID: choreListID, UserID: userID})
+		cl, err := cdb.New(db).GetChoreListByUser(ctx, cdb.GetChoreListByUserParams{ID: choreListID, UserID: userID})
 		if err != nil {
 			return srvu.Err(http.StatusForbidden, err)
 		}
 		return view.ChoreListChartPage(w, r, ChoreListChartView{
-			ChoreListID: choreListID,
+			List: cl,
 		})
 	})
 }

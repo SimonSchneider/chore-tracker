@@ -97,7 +97,7 @@ func (v *View) ChoreListPage(w http.ResponseWriter, r *http.Request, d ChoreList
 
 type ChoreListChartView struct {
 	*RequestDetails
-	ChoreListID string
+	List cdb.ChoreList
 }
 
 func (v *View) ChoreListChartPage(w http.ResponseWriter, r *http.Request, d ChoreListChartView) error {
