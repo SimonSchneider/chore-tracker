@@ -50,6 +50,10 @@
                 const rangeMin = getYear(data[0].date)
                 const rangeMax = getYear(data[data.length - 1].date)
                 const range = getRange(rangeMin, rangeMax)
+                const computedStyle = window.getComputedStyle(document.body)
+                const minColor = computedStyle.getPropertyValue('--color-accent')
+                const maxColor = computedStyle.getPropertyValue('--color-bold')
+                const backgroundColor = computedStyle.getPropertyValue('--color-background')
                 myChart.setOption({
                     tooltip: {},
                     visualMap: {
@@ -58,12 +62,39 @@
                         calculable: true,
                         orient: 'vertical',
                         top: 'center',
-                        left: 10
+                        left: 10,
+                        inRange: {
+                            color: [minColor, maxColor]
+                        },
+                        textStyle: {
+                            color: computedStyle.getPropertyValue('--color-tertiary')
+                        }
                     },
+                    backgroundColor: backgroundColor,
                     calendar: {
                         orient: 'vertical',
                         cellSize: [20, 'auto'],
                         left: 'center',
+                        splitLine: {
+                            lineStyle: {
+                                color: computedStyle.getPropertyValue('--color-tertiary')
+                            }
+                        },
+                        itemStyle: {
+                            color: backgroundColor,
+                            borderColor: computedStyle.getPropertyValue('--color-secondary'),
+                            shadowColor: computedStyle.getPropertyValue('--color-highlight')
+                        },
+                        dayLabel: {
+                            firstDay: 1,
+                            color: computedStyle.getPropertyValue('--color-tertiary')
+                        },
+                        monthLabel: {
+                            color: computedStyle.getPropertyValue('--color-tertiary')
+                        },
+                        yearLabel: {
+                            color: computedStyle.getPropertyValue('--color-tertiary')
+                        },
                         range,
                     },
                     series: {

@@ -286,15 +286,20 @@ hr {
     display: inline-block;
 }
 
+body {
+    background-color: var(--color-background);
+}
+
 :root {
     --color-background: #ffffff;
+    --color-submit-text: #ffffff;
     --color-accent: #fff4f5;
     --color-list-element-alt1: #ffe8ea;
     --color-list-element-alt2: #fff0e1;
     --color-primary: #ffdce3;
     --color-secondary: #b3b3b3;
     --color-muted: #bfbfbf;
-    --color-tertiary: #999;
+    --color-tertiary: #333;
     --color-highlight: #FFB6C1;
     --color-bold: #FF9CAD;
     --button-padding: 3px;
@@ -302,7 +307,8 @@ hr {
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --color-background: #333;
+        --color-background: #222;
+        --color-submit-text: #333;
         --color-accent: #444;
         --color-primary: #ae9599;
         --color-secondary: #666;
@@ -347,7 +353,7 @@ body:has(dialog[open]) {
 }
 
 details summary::-webkit-details-marker {
-    display:none;
+    display: none;
 }
 
 summary::marker {
@@ -508,7 +514,7 @@ input:focus {
 
 input[type="submit"] {
     background-color: var(--color-primary);
-    color: var(--color-background);
+    color: var(--color-submit-text);
     border: 0;
     border-radius: 0.5rem;
     padding: var(--button-padding);
