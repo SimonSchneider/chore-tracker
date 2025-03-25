@@ -105,10 +105,6 @@ func (v *View) ChoreListChartPage(w http.ResponseWriter, r *http.Request, d Chor
 	return v.p.ExecuteTemplate(w, "chore_list_chart.page.gohtml", d)
 }
 
-type ChoreListDataViewCalendar struct {
-	Range string `json:"range"`
-}
-
 type ChoreListDataViewSeries struct {
 	Date  date.Date `json:"date"`
 	Value int64     `json:"value"`
@@ -123,12 +119,7 @@ func (v *View) ChoreListChartData(w http.ResponseWriter, r *http.Request, d *Cho
 	w.Header().Add("Pragma", "no-cache")
 	w.Header().Add("Expires", "0")
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
-	fmt.Printf("here: %v\n", d)
 	return json.NewEncoder(w).Encode(d)
-}
-
-func (v *View) ChoreModal(w http.ResponseWriter, r *http.Request, d *Chore) error {
-	return v.p.ExecuteTemplate(w, "chore-modal.gohtml", d)
 }
 
 type ChoreEditView struct {
