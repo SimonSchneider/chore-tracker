@@ -97,7 +97,7 @@ func (c *Config) RefreshHandler() http.Handler {
 				srvu.GetLogger(r.Context()).Printf("failed generate long token: %v", err)
 			}
 		}
-		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
 		return nil
 	})
 }
@@ -185,7 +185,7 @@ func (c *Config) Middleware(allowUnauthenticated, followRedirect bool) srvu.Midd
 			if err != nil && allowUnauthenticated {
 				h.ServeHTTP(w, r.WithContext(withoutSession(r.Context())))
 			} else if err != nil {
-				http.Redirect(w, r, fmt.Sprintf("%s?%s=%s", c.refreshPath(), c.redirectParam(), r.URL.RequestURI()), http.StatusSeeOther)
+				http.Redirect(w, r, fmt.Sprintf("%s?%s=%s", c.refreshPath(), c.redirectParam(), r.URL.RequestURI()), http.StatusTemporaryRedirect)
 			} else {
 				if refresh {
 					if err := c.SessionCookie.generateStoreAndSetSessionCookie(r.Context(), session.UserID, c.sessionCookiePath(), w); err != nil {
