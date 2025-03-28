@@ -8,14 +8,16 @@ WHERE chore.id = ?
 
 -- name: CreateChore :one
 INSERT INTO chore
-(id, name, interval, created_at, last_completion, snoozed_for, repeats_left, chore_list_id, created_by)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
+(id, name, interval, created_at, last_completion, snoozed_for, repeats_left, chore_list_id, created_by, chore_type)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: UpdateChore :one
 UPDATE chore
-SET name         = ?,
-    interval     = ?,
-    repeats_left = ?
+SET name            = ?,
+    interval        = ?,
+    repeats_left    = ?,
+    snoozed_for     = ?,
+    last_completion = ?
 WHERE id = ? RETURNING *;
 
 -- name: DeleteChore :exec

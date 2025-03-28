@@ -15,6 +15,7 @@ import (
 type Chore struct {
 	ID             string
 	Name           string
+	ChoreType      string
 	CreatedAt      date.Date
 	Interval       date.Duration
 	LastCompletion date.Date
@@ -27,19 +28,20 @@ func (c *Chore) Repeats() bool {
 	return c.RepeatsLeft > 0
 }
 
-func (c *Chore) ChoreType() string {
-	if c.Interval == 0 {
-		return "oneshot"
-	}
-	return "interval"
-}
-
 func (c Chore) IsOneshot() bool {
-	return c.Interval == 0
+	return c.ChoreType == "oneshot"
 }
 
 func (c Chore) IsInterval() bool {
-	return c.Interval != 0
+	return c.ChoreType == "interval"
+}
+
+func (c Chore) IsDate() bool {
+	return c.ChoreType == "date"
+}
+
+func (c Chore) IsDateRepeating() bool {
+	return c.ChoreType == "date-repeating"
 }
 
 func (c *Chore) NextCompletion() date.Date {
@@ -61,6 +63,7 @@ func ChoreFromDb(row cdb.Chore) Chore {
 	return Chore{
 		ID:             row.ID,
 		Name:           row.Name,
+		ChoreType:      row.ChoreType,
 		CreatedAt:      date.Date(row.CreatedAt),
 		Interval:       date.Duration(row.Interval),
 		LastCompletion: date.Date(row.LastCompletion),
@@ -97,11 +100,10 @@ func ChoreEditPage(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusBadRequest, fmt.Errorf("getting chore from request: %w", err))
 		}
-		choreType := r.FormValue("chore-type")
-		if choreType == "" {
-			choreType = ch.ChoreType()
-		}
-		return view.ChoreEditPage(w, r, ChoreEditView{Chore: *ch, ChoreType: choreType})
+		return view.ChoreEditPage(w, r, ChoreEditView{
+			Chore:     *ch,
+			ChoreType: Coalesce(r.FormValue("chore-type"), ch.ChoreType),
+		})
 	})
 }
 
@@ -199,7 +201,7 @@ func ChoreUpdateHandler(db *sql.DB, view *View) http.Handler {
 		if err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("getting chore from request: %w", err))
 		}
-		if _, err := Update(ctx, db, id, inp); err != nil {
+		if _, err := Update(ctx, db, chore, inp); err != nil {
 			return srvu.Err(http.StatusInternalServerError, fmt.Errorf("updating the chore: %w", err))
 		}
 		httpu.RedirectToNext(w, r, fmt.Sprintf("/chore-lists/%s", chore.ChoreListID))
