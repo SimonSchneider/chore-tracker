@@ -51,8 +51,31 @@ func (s *DBTokenStore) VerifyCSRFToken(ctx context.Context, userID, csrfToken st
 	return res == 1, nil
 }
 
+func sessionCreateParams(session auth.Session) cdb.CreateTokenParams {
+	return cdb.CreateTokenParams{UserID: session.UserID, Token: session.Token, CsrfToken: session.CSRFToken, ExpiresAt: session.ExpiresAt.UnixMilli()}
+}
+
 func (s *DBTokenStore) StoreSession(ctx context.Context, session auth.Session) error {
-	return cdb.New(s.DB).CreateToken(ctx, cdb.CreateTokenParams{UserID: session.UserID, Token: session.Token, CsrfToken: session.CSRFToken, ExpiresAt: session.ExpiresAt.UnixMilli()})
+	return cdb.New(s.DB).CreateToken(ctx, sessionCreateParams(session))
+}
+
+func (s *DBTokenStore) ReplaceSession(ctx context.Context, oldSession, newSession auth.Session) error {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("unable to start tx: %w", err)
+	}
+	defer tx.Rollback()
+	q := cdb.New(tx)
+	if err := q.DeleteToken(ctx, oldSession.Token); err != nil {
+		return fmt.Errorf("deleting old session: %w", err)
+	}
+	if err := q.CreateToken(ctx, sessionCreateParams(newSession)); err != nil {
+		return fmt.Errorf("creating new session: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing tx: %w", err)
+	}
+	return nil
 }
 
 func (s *DBTokenStore) DeleteSessions(ctx context.Context, userID string) error {
@@ -73,4 +96,8 @@ func (s *DBTokenStore) VerifySession(ctx context.Context, token string, now time
 		CSRFToken: res.CsrfToken,
 		ExpiresAt: time.UnixMilli(res.ExpiresAt),
 	}, true, nil
+}
+
+func (s *DBTokenStore) GC(ctx context.Context, now time.Time) error {
+	return cdb.New(s.DB).DeleteExpiredTokens(ctx, now.UnixMilli())
 }
