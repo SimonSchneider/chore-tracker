@@ -32,6 +32,28 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error 
 	return err
 }
 
+const deleteExpiredTokens = `-- name: DeleteExpiredTokens :exec
+DELETE
+FROM tokens
+WHERE expires_at < ?
+`
+
+func (q *Queries) DeleteExpiredTokens(ctx context.Context, expiresAt int64) error {
+	_, err := q.db.ExecContext(ctx, deleteExpiredTokens, expiresAt)
+	return err
+}
+
+const deleteToken = `-- name: DeleteToken :exec
+DELETE
+FROM tokens
+WHERE token = ?
+`
+
+func (q *Queries) DeleteToken(ctx context.Context, token string) error {
+	_, err := q.db.ExecContext(ctx, deleteToken, token)
+	return err
+}
+
 const deleteTokensByUserId = `-- name: DeleteTokensByUserId :exec
 DELETE
 FROM tokens

@@ -9,6 +9,11 @@ FROM tokens
 WHERE token = ?
   AND expires_at > ?;
 
+-- name: DeleteToken :exec
+DELETE
+FROM tokens
+WHERE token = ?;
+
 -- name: DeleteTokensByUserId :exec
 DELETE
 FROM tokens
@@ -25,3 +30,8 @@ FROM tokens
 WHERE user_id = ?
   AND csrf_token = ?
   AND expires_at > ?;
+
+-- name: DeleteExpiredTokens :exec
+DELETE
+FROM tokens
+WHERE expires_at < ?;
