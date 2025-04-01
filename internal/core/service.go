@@ -86,6 +86,9 @@ func (i *Input) Validate(prev *Chore) error {
 		if i.Repeats != 1 {
 			return fmt.Errorf("oneshot chore can't have repeats")
 		}
+		if prev != nil {
+			i.Date = prev.LastCompletion
+		}
 	case ChoreTypeDate:
 		if i.Date.IsZero() {
 			return fmt.Errorf("date chore must have a date")
@@ -152,7 +155,6 @@ func Update(ctx context.Context, db *sql.DB, prev *Chore, input Input) (*Chore, 
 	if err := input.Validate(prev); err != nil {
 		return nil, fmt.Errorf("invalid input: %w", err)
 	}
-	// TODO: update date chore type
 	dbChore, err := cdb.New(db).UpdateChore(ctx, cdb.UpdateChoreParams{
 		ID:             prev.ID,
 		Name:           input.Name,
