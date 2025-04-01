@@ -18,6 +18,7 @@ type Chore struct {
 	ChoreListID    string
 	CreatedBy      string
 	RepeatsLeft    int64
+	ChoreType      string
 }
 
 type ChoreEvent struct {

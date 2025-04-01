@@ -123,7 +123,6 @@ func (v *View) ChoreListChartData(w http.ResponseWriter, r *http.Request, d *Cho
 	w.Header().Add("Pragma", "no-cache")
 	w.Header().Add("Expires", "0")
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
-	fmt.Printf("here: %v\n", d)
 	return json.NewEncoder(w).Encode(d)
 }
 
@@ -142,19 +141,19 @@ func (c ChoreEditView) IsEdit() bool {
 }
 
 func (c ChoreEditView) IsInterval() bool {
-	return c.ChoreType == "interval" || c.ChoreType == ""
+	return c.ChoreType == ChoreTypeInterval
 }
 
 func (c ChoreEditView) IsOneshot() bool {
-	return c.ChoreType == "oneshot"
+	return c.ChoreType == ChoreTypeOneshot
 }
 
 func (c ChoreEditView) IsDate() bool {
-	return c.ChoreType == "date"
+	return c.ChoreType == ChoreTypeDate
 }
 
 func (c ChoreEditView) IsDateRepeating() bool {
-	return c.ChoreType == "date-repeating"
+	return c.ChoreType == ChoreTypeDateRepeating
 }
 
 func (c ChoreEditView) RepeatsValue() string {
