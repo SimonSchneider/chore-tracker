@@ -11,7 +11,6 @@ import (
 	"github.com/SimonSchneider/goslu/srvu"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
-	"golang.org/x/exp/slices"
 	"html/template"
 	"io"
 	"log"
@@ -224,11 +223,12 @@ func NewChoreList(ctx context.Context, client *Client, token *ClientToken, formV
 }
 
 func findInSlice[T any](slice []T, pred func(T) bool) *T {
-	idx := slices.IndexFunc(slice, pred)
-	if idx == -1 {
-		return nil
+	for i, v := range slice {
+		if pred(v) {
+			return &slice[i]
+		}
 	}
-	return &slice[idx]
+	return nil
 }
 
 func NewChore(ctx context.Context, client *Client, token *ClientToken, formVals map[string]string) (*core.Chore, error) {
