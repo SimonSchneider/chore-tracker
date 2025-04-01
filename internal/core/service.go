@@ -12,9 +12,11 @@ import (
 
 type Input struct {
 	Name        string
+	ChoreType   string
 	ChoreListID string
 	Interval    date.Duration
 	Repeats     int64
+	Date        date.Date
 }
 
 func parse[T any](into *T, parser func(string) (T, error), val string, ifEmpty T) error {
@@ -37,11 +39,65 @@ func parseInt(val string) (int64, error) {
 func (i *Input) FromForm(r *http.Request) error {
 	i.Name = r.FormValue("name")
 	i.ChoreListID = r.FormValue("choreListID")
+	i.ChoreType = r.FormValue("choreType")
 	if err := parse(&i.Interval, date.ParseDuration, r.FormValue("interval"), 0); err != nil {
 		return fmt.Errorf("invalid interval: %w", err)
 	}
 	if err := parse(&i.Repeats, parseInt, r.FormValue("repeats"), -1); err != nil {
 		return fmt.Errorf("invalid repeats: %w", err)
+	}
+	if err := parse(&i.Date, date.ParseDate, r.FormValue("date"), 0); err != nil {
+		return fmt.Errorf("invalid date: %w", err)
+	}
+	return nil
+}
+
+func (i *Input) Validate(prev *Chore) error {
+	if i.Name == "" {
+		return fmt.Errorf("illegal empty name for new chore")
+	}
+	if prev == nil && i.ChoreListID == "" {
+		return fmt.Errorf("illegal empty choreListID for new chore")
+	}
+	if prev != nil {
+		i.ChoreType = prev.ChoreType
+	}
+	switch i.ChoreType {
+	case ChoreTypeInterval:
+		if !i.Date.IsZero() {
+			return fmt.Errorf("interval chore can't have a date")
+		}
+		if i.Interval.Zero() {
+			return fmt.Errorf("interval chore can't have a zero interval")
+		}
+		if !(i.Repeats == -1 || i.Repeats > 0) {
+			return fmt.Errorf("interval chore must have repeats > 0 or -1")
+		}
+		if prev != nil {
+			i.Date = prev.LastCompletion
+		}
+	case ChoreTypeOneshot:
+		if !i.Date.IsZero() {
+			return fmt.Errorf("oneshot chore can't have a date")
+		}
+		if !i.Interval.Zero() {
+			return fmt.Errorf("oneshot chore can't have an interval")
+		}
+		if i.Repeats != 1 {
+			return fmt.Errorf("oneshot chore can't have repeats")
+		}
+	case ChoreTypeDate:
+		if i.Date.IsZero() {
+			return fmt.Errorf("date chore must have a date")
+		}
+		if !i.Interval.Zero() {
+			return fmt.Errorf("date chore can't have an interval: %s", i.Interval)
+		}
+		if i.Repeats != 1 {
+			return fmt.Errorf("date chore can't have repeats: %d", i.Repeats)
+		}
+	default:
+		return fmt.Errorf("illegal choreType: %s", i.ChoreType)
 	}
 	return nil
 }
@@ -68,20 +124,19 @@ func get(ctx context.Context, db *cdb.Queries, userID, id string) (*Chore, error
 }
 
 func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, input Input) (*Chore, error) {
-	if input.Name == "" {
-		return nil, fmt.Errorf("illegal empty name for new chore")
-	}
-	if input.Interval.Zero() && input.Repeats < 1 {
-		return nil, fmt.Errorf("chore interval can't be zero if there are no repeats")
+	if err := input.Validate(nil); err != nil {
+		return nil, fmt.Errorf("invalid input: %w", err)
 	}
 	row, err := cdb.New(db).CreateChore(ctx, cdb.CreateChoreParams{
-		ID:          NewId(),
-		Name:        input.Name,
-		CreatedAt:   int64(today),
-		ChoreListID: input.ChoreListID,
-		Interval:    int64(input.Interval),
-		RepeatsLeft: input.Repeats,
-		CreatedBy:   userID,
+		ID:             NewId(),
+		Name:           input.Name,
+		ChoreType:      input.ChoreType,
+		CreatedAt:      int64(today),
+		ChoreListID:    input.ChoreListID,
+		Interval:       int64(input.Interval),
+		LastCompletion: int64(input.Date),
+		RepeatsLeft:    input.Repeats,
+		CreatedBy:      userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating chore: %w", err)
@@ -90,18 +145,20 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, inp
 	return &chore, nil
 }
 
-func Update(ctx context.Context, db *sql.DB, id string, input Input) (*Chore, error) {
-	if id == "" {
+func Update(ctx context.Context, db *sql.DB, prev *Chore, input Input) (*Chore, error) {
+	if prev == nil || prev.ID == "" {
 		return nil, fmt.Errorf("illegal empty id for updating chore")
 	}
-	if input.Name == "" || (input.Interval.Zero() && input.Repeats < 1) {
-		return nil, fmt.Errorf("illegal empty name or interval for updating chore")
+	if err := input.Validate(prev); err != nil {
+		return nil, fmt.Errorf("invalid input: %w", err)
 	}
+	// TODO: update date chore type
 	dbChore, err := cdb.New(db).UpdateChore(ctx, cdb.UpdateChoreParams{
-		ID:          id,
-		Name:        input.Name,
-		Interval:    int64(input.Interval),
-		RepeatsLeft: input.Repeats,
+		ID:             prev.ID,
+		Name:           input.Name,
+		Interval:       int64(input.Interval),
+		RepeatsLeft:    input.Repeats,
+		LastCompletion: int64(input.Date),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("updating chore: %w", err)

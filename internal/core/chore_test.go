@@ -8,67 +8,112 @@ import (
 	"testing"
 )
 
-func TestCreateChore(t *testing.T) {
+func TestCRUDChore(t *testing.T) {
 	ctx, client, cancel := Setup()
 	defer cancel()
 	tok := Must(client.NewToken(ctx))
 	cl := Must(NewChoreList(ctx, client, tok, map[string]string{"name": "test"}))
-	chore, err := NewChore(ctx, client, tok, map[string]string{
-		"name":        "test",
-		"interval":    "1w",
-		"choreListID": cl.List.ID,
+	t.Run("Create Interval chore", func(t *testing.T) {
+		chore, err := NewChore(ctx, client, tok, map[string]string{
+			"name":        "interval",
+			"interval":    "1w",
+			"choreType":   core.ChoreTypeInterval,
+			"choreListID": cl.List.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create chore: %s", err)
+		}
+		if chore.Name != "interval" {
+			t.Fatalf("chore name is not 'test'")
+		}
+		if chore.Interval != date.Week {
+			t.Fatalf("chore interval is not 1w")
+		}
+		if chore.ChoreListID != cl.List.ID {
+			t.Fatalf("chore list id is not the same")
+		}
+		t.Run("Update", func(t *testing.T) {
+			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), tok.CSRF, map[string]string{
+				"name":     "int2",
+				"interval": "2w",
+			}).DoAndFollow(http.StatusSeeOther); err != nil {
+				t.Fatalf("failed to change chore: %s", err)
+			}
+			updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, chore.ID))
+			if updatedChore.Name != "int2" {
+				t.Fatalf("chore name is not 'int2'")
+			}
+			if updatedChore.Interval != 2*date.Week {
+				t.Fatalf("chore interval is not 2w")
+			}
+		})
 	})
-	if err != nil {
-		t.Fatalf("failed to create chore: %s", err)
-	}
-	if chore.Name != "test" {
-		t.Fatalf("chore name is not 'test'")
-	}
-	if chore.Interval != date.Week {
-		t.Fatalf("chore interval is not 1w")
-	}
-	if chore.ChoreListID != cl.List.ID {
-		t.Fatalf("chore list id is not the same")
-	}
-}
-
-func TestChangeIntervalChore(t *testing.T) {
-	ctx, client, cancel := Setup()
-	defer cancel()
-	tok := Must(client.NewToken(ctx))
-	cl := Must(NewChoreList(ctx, client, tok, map[string]string{"name": "test"}))
-	ch := Must(NewChore(ctx, client, tok, map[string]string{"name": "test", "interval": "1w", "choreListID": cl.List.ID}))
-	if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", ch.ID), tok.CSRF, map[string]string{
-		"name":     "test2",
-		"interval": "2w",
-	}).DoAndFollow(http.StatusSeeOther); err != nil {
-		t.Fatalf("failed to change chore: %s", err)
-	}
-	updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, ch.ID))
-	if updatedChore.Name != "test2" {
-		t.Fatalf("chore name is not 'test'")
-	}
-	if updatedChore.Interval != 2*date.Week {
-		t.Fatalf("chore interval is not 2w")
-	}
-}
-
-func TestChangeOneshotChore(t *testing.T) {
-	ctx, client, cancel := Setup()
-	defer cancel()
-	tok := Must(client.NewToken(ctx))
-	cl := Must(NewChoreList(ctx, client, tok, map[string]string{"name": "test"}))
-	ch := Must(NewChore(ctx, client, tok, map[string]string{"name": "test", "repeats": "1", "choreListID": cl.List.ID}))
-	if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", ch.ID), tok.CSRF, map[string]string{
-		"name":    "test2",
-		"repeats": "1",
-	}).DoAndFollow(http.StatusSeeOther); err != nil {
-		t.Fatalf("failed to change chore: %s", err)
-	}
-	updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, ch.ID))
-	if updatedChore.Name != "test2" {
-		t.Fatalf("chore name is not 'test'")
-	}
+	t.Run("Create Oneshot chore", func(t *testing.T) {
+		chore, err := NewChore(ctx, client, tok, map[string]string{
+			"name":        "oneshot",
+			"repeats":     "1",
+			"choreType":   core.ChoreTypeOneshot,
+			"choreListID": cl.List.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create chore: %s", err)
+		}
+		if chore.Name != "oneshot" {
+			t.Fatalf("chore name is not 'test'")
+		}
+		if chore.RepeatsLeft != 1 {
+			t.Fatalf("chore repeats is not 1")
+		}
+		if chore.ChoreListID != cl.List.ID {
+			t.Fatalf("chore list id is not the same")
+		}
+		t.Run("Update", func(t *testing.T) {
+			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), tok.CSRF, map[string]string{
+				"name":    "once2",
+				"repeats": "1",
+			}).DoAndFollow(http.StatusSeeOther); err != nil {
+				t.Fatalf("failed to change chore: %s", err)
+			}
+			updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, chore.ID))
+			if updatedChore.Name != "once2" {
+				t.Fatalf("chore name is not 'once2'")
+			}
+		})
+	})
+	t.Run("Create Date chore", func(t *testing.T) {
+		chore, err := NewChore(ctx, client, tok, map[string]string{
+			"name":        "date",
+			"date":        date.Today().String(),
+			"repeats":     "1",
+			"choreType":   core.ChoreTypeDate,
+			"choreListID": cl.List.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create chore: %s", err)
+		}
+		if chore.Name != "date" {
+			t.Fatalf("chore name is not 'test'")
+		}
+		if chore.RepeatsLeft != 1 {
+			t.Fatalf("chore repeats is not 1")
+		}
+		if chore.ChoreListID != cl.List.ID {
+			t.Fatalf("chore list id is not the same")
+		}
+		t.Run("Update", func(t *testing.T) {
+			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), tok.CSRF, map[string]string{
+				"name":    "date2",
+				"repeats": "1",
+				"date":    date.Today().Add(1).String(),
+			}).DoAndFollow(http.StatusSeeOther); err != nil {
+				t.Fatalf("failed to change chore: %s", err)
+			}
+			updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, chore.ID))
+			if updatedChore.Name != "date2" {
+				t.Fatalf("chore name is not 'test'")
+			}
+		})
+	})
 }
 
 func TestListViewChores(t *testing.T) {
@@ -80,6 +125,7 @@ func TestListViewChores(t *testing.T) {
 	for i := 0; i < len(createdChrs); i++ {
 		ch := Must(NewChore(ctx, client, tok, map[string]string{
 			"name":        "test",
+			"choreType":   core.ChoreTypeInterval,
 			"choreListID": cl.List.ID,
 			"interval":    Must(date.ParseDuration(fmt.Sprintf("1w%dd", len(createdChrs)-i))).String(),
 		}))

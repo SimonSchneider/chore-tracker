@@ -21,8 +21,8 @@
                 <img alt="oneshot" src="/static/public/icons/circle-number-1.svg" width="24" height="24"/>
                 Once
             </label>
-            <label class="button adorned-button disabled">
-                <input type="radio" form="select-type-form" disabled name="chore-type" value="date"
+            <label class="button adorned-button">
+                <input type="radio" form="select-type-form" name="chore-type" value="date"
                        {{if .IsDate}}checked{{end}}/>
                 <img alt="date" src="/static/public/icons/calendar-event.svg" width="24" height="24"/>
                 Date
@@ -35,8 +35,10 @@
             </label>
         </fieldset>
         <input name="choreListID" type="hidden" value="{{.Chore.ChoreListID}}"/>
+        <input name="choreType" type="hidden" value="{{.ChoreType}}"/>
         {{ if .IsOneshot }}
-            <input type="hidden" name="interval" value=""/>
+            <input type="hidden" name="repeats" value="1"/>
+        {{ else if .IsDate}}
             <input type="hidden" name="repeats" value="1"/>
         {{ end }}
         <fieldset role="group" class="group column nogap">
@@ -49,6 +51,10 @@
                        value="{{.Chore.Interval.String}}" name="interval"/>
                 <input aria-label="chore repeats" type="number" placeholder="repeats"
                        value="{{ .RepeatsValue }}" name="repeats"/>
+            {{ else if .IsDate }}
+                <input aria-label="chore date" type="text" placeholder="2024-07-14"
+                       value="{{ if not .Chore.LastCompletion.IsZero }}{{ .Chore.LastCompletion }}{{ end }}"
+                       name="date"/>
             {{ end }}
         </fieldset>
     </div>
