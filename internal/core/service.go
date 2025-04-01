@@ -94,7 +94,7 @@ func Update(ctx context.Context, db *sql.DB, id string, input Input) (*Chore, er
 	if id == "" {
 		return nil, fmt.Errorf("illegal empty id for updating chore")
 	}
-	if input.Name == "" || input.Interval.Zero() {
+	if input.Name == "" || (input.Interval.Zero() && input.Repeats < 1) {
 		return nil, fmt.Errorf("illegal empty name or interval for updating chore")
 	}
 	dbChore, err := cdb.New(db).UpdateChore(ctx, cdb.UpdateChoreParams{

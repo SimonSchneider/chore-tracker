@@ -32,24 +32,42 @@ func TestCreateChore(t *testing.T) {
 	}
 }
 
-func TestChangeChore(t *testing.T) {
+func TestChangeIntervalChore(t *testing.T) {
 	ctx, client, cancel := Setup()
 	defer cancel()
 	tok := Must(client.NewToken(ctx))
 	cl := Must(NewChoreList(ctx, client, tok, map[string]string{"name": "test"}))
 	ch := Must(NewChore(ctx, client, tok, map[string]string{"name": "test", "interval": "1w", "choreListID": cl.List.ID}))
-	if _, err := NewChoreReq(ctx, client).Auth(tok).Form("PUT", fmt.Sprintf("/chores/%s", ch.ID), map[string]string{"name": "test", "interval": "2w"}).DoAndFollow(http.StatusOK); err != nil {
+	if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", ch.ID), tok.CSRF, map[string]string{
+		"name":     "test2",
+		"interval": "2w",
+	}).DoAndFollow(http.StatusSeeOther); err != nil {
 		t.Fatalf("failed to change chore: %s", err)
 	}
-	if _, err := NewChoreReq(ctx, client).Auth(tok).Get(fmt.Sprintf("/chores/%s", ch.ID)).DoAndFollow(http.StatusOK); err != nil {
-		t.Fatalf("failed to get chore: %s", err)
-	}
-	updatedChore := GetTpl[*core.Chore](client.tmpl, "chore-element.gohtml")
-	if updatedChore.Name != "test" {
+	updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, ch.ID))
+	if updatedChore.Name != "test2" {
 		t.Fatalf("chore name is not 'test'")
 	}
 	if updatedChore.Interval != 2*date.Week {
 		t.Fatalf("chore interval is not 2w")
+	}
+}
+
+func TestChangeOneshotChore(t *testing.T) {
+	ctx, client, cancel := Setup()
+	defer cancel()
+	tok := Must(client.NewToken(ctx))
+	cl := Must(NewChoreList(ctx, client, tok, map[string]string{"name": "test"}))
+	ch := Must(NewChore(ctx, client, tok, map[string]string{"name": "test", "repeats": "1", "choreListID": cl.List.ID}))
+	if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", ch.ID), tok.CSRF, map[string]string{
+		"name":    "test2",
+		"repeats": "1",
+	}).DoAndFollow(http.StatusSeeOther); err != nil {
+		t.Fatalf("failed to change chore: %s", err)
+	}
+	updatedChore := Must(GetChore(ctx, client, tok, cl.List.ID, ch.ID))
+	if updatedChore.Name != "test2" {
+		t.Fatalf("chore name is not 'test'")
 	}
 }
 
@@ -65,7 +83,7 @@ func TestListViewChores(t *testing.T) {
 			"choreListID": cl.List.ID,
 			"interval":    Must(date.ParseDuration(fmt.Sprintf("1w%dd", len(createdChrs)-i))).String(),
 		}))
-		Must(NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s/complete", ch.ID), nil).DoAndExp(http.StatusOK))
+		Must(NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s/complete", ch.ID), tok.CSRF, nil).DoAndFollow(http.StatusSeeOther))
 		createdChrs[i] = ch
 	}
 	Must(NewChoreReq(ctx, client).Auth(tok).Get(fmt.Sprintf("/chore-lists/%s", cl.List.ID)).DoAndExp(http.StatusOK))

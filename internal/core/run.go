@@ -54,6 +54,17 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	if err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
+	public, tmplProv, err := templ.GetPublicAndTemplates(choretracker.StaticEmbeddedFS, &templ.Config{
+		Watch:        cfg.Watch,
+		TmplPatterns: []string{"templates/*.gohtml"},
+	})
+	if err != nil {
+		return fmt.Errorf("sub static: %w", err)
+	}
+	return RunCfg(ctx, stdout, cfg, public, tmplProv)
+}
+
+func RunCfg(ctx context.Context, stdout io.Writer, cfg Config, public fs.FS, tmplProv templ.TemplateProvider) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	defer cancel()
 	logger := srvu.LogToOutput(log.New(stdout, "", log.LstdFlags|log.Lshortfile))
@@ -63,14 +74,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 		return fmt.Errorf("failed to migrate db: %w", err)
 	}
 
-	public, tmplProv, err := templ.GetPublicAndTemplates(choretracker.StaticEmbeddedFS, &templ.Config{
-		Watch:        cfg.Watch,
-		TmplPatterns: []string{"templates/*.gohtml"},
-	})
 	view := NewView(tmplProv)
-	if err != nil {
-		return fmt.Errorf("sub static: %w", err)
-	}
 	authConfig := auth.Config{
 		Provider:                    &AuthProvider{db: db},
 		RedirectParam:               "redirect",
