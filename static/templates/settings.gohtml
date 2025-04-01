@@ -17,7 +17,16 @@
     <hr/>
     <details open>
         <summary>
-            <span>Invites</span>
+            <div style="display: flex; align-items: center; justify-content: flex-start; flex-grow: 1">
+                <span style="flex-grow: 0">Invites</span>
+                <button popovertarget="invites-popover" style="display: flex; align-items: center" class="icon-info">
+                    <img
+                            alt="info"
+                            src="/static/public/icons/info-circle.svg"
+                            height="24"
+                            width="24"/>
+                </button>
+            </div>
             <span class="secondary-text">{{len .CreatedInvites}}</span>
         </summary>
         <div class="list-container">
@@ -42,4 +51,19 @@
             {{ end }}
         </div>
     </details>
+    <div id="invites-popover" popover class="modalx">
+        <h2>Invites</h2>
+        <p>Are used to share your chore lists with others. You can create an invite on the chore
+            list edit
+            page and share the link with
+            others. They can then accept the invite and view the chore list.</p>
+        <button value="cancel" popovertarget="invites-popover" class="button">Close</button>
+    </div>
+    <div id="password-auths-popover" popover class="modalx">
+        <h2>Password auths</h2>
+        <p>Password auths are used to login to the application. They are the combination of username and password.
+            Your user can therefore have multiple usernames connected to it, each with its own password. Currently
+            only a single password auth can be created per user but in future a single user could have many.</p>
+        <button popovertarget="password-auths-popover" class="button">Close</button>
+    </div>
 </div>
