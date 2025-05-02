@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"time"
 )
@@ -23,6 +24,26 @@ func (s *InMemorySessionStore) StoreSession(ctx context.Context, session Session
 	defer s.lock.Unlock()
 	s.userSessions[session.UserID] = append(s.userSessions[session.UserID], &session)
 	s.sessions[session.Token] = &session
+	return nil
+}
+
+func (s *InMemorySessionStore) ReplaceSession(ctx context.Context, oldSession, newSession Session) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	// remove old token and set new token
+	delete(s.sessions, oldSession.Token)
+	s.sessions[newSession.Token] = &newSession
+
+	sessions := s.userSessions[oldSession.UserID]
+	for i, session := range sessions {
+		if session.Token == oldSession.Token {
+			// replace old session with new session in userSessions
+			sessions[i] = &newSession
+			return nil
+		}
+	}
+	// if old session was not found, add new session
+	s.userSessions[oldSession.UserID] = append(sessions, &newSession)
 	return nil
 }
 
@@ -66,4 +87,20 @@ func (s *InMemorySessionStore) VerifyCSRFToken(ctx context.Context, userID, csrf
 		}
 	}
 	return false, nil
+}
+
+func (s *InMemorySessionStore) GC(ctx context.Context, now time.Time) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for token, session := range s.sessions {
+		if session.ExpiresAt.Before(now) {
+			delete(s.sessions, token)
+		}
+	}
+	for userID, sessions := range s.userSessions {
+		s.userSessions[userID] = slices.DeleteFunc(sessions, func(sess *Session) bool {
+			return sess.ExpiresAt.Before(now)
+		})
+	}
+	return nil
 }
