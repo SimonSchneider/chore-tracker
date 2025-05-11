@@ -34,7 +34,9 @@ type HtmlTemplateProvider struct {
 
 func (p *HtmlTemplateProvider) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
 	if rw, ok := w.(http.ResponseWriter); ok {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if rw.Header().Get("Content-Type") == "" {
+			rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+		}
 		rw.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, private")
 		rw.Header().Set("Pragma", "no-cache")
 		rw.Header().Set("Expires", "0")
@@ -218,4 +220,16 @@ func (v *View) InviteAcceptPage(w http.ResponseWriter, r *http.Request, d Invite
 
 func (v *View) LoginPage(w http.ResponseWriter, r *http.Request) error {
 	return v.p.ExecuteTemplate(w, "login.page.gohtml", nil)
+}
+
+type ChoreListIcsView struct {
+	ID     string
+	Name   string
+	Chores []Chore
+}
+
+func (v *View) ChoreListIcs(w http.ResponseWriter, r *http.Request, d *ChoreListIcsView) error {
+	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("filename=%s-%s.ics", d.Name, d.ID))
+	return v.p.ExecuteTemplate(w, "calendar.goics", d)
 }

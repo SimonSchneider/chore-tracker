@@ -12,6 +12,7 @@ import (
 	"github.com/SimonSchneider/goslu/srvu"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -320,5 +321,41 @@ func ChoreListMux(db *sql.DB, view *View, inviteStore *InviteStore) *http.ServeM
 	mux.Handle("GET /chore-lists/{choreListID}", ChoreListPage(db, view))
 	mux.Handle("GET /chore-lists/{choreListID}/", ChoreListPage(db, view))
 	mux.Handle("GET /chore-lists/{$}", ChoreListsPage(db, view))
+	return mux
+}
+
+func APIChoreListIcsFile(db *sql.DB, view *View, apiKey string) http.Handler {
+	return srvu.ErrHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		choreListID := r.PathValue("choreListID")
+		qAPIKey := r.FormValue("apiKey")
+		if qAPIKey == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing APIKey"))
+		}
+		if apiKey == "" {
+			return srvu.Err(http.StatusBadRequest, fmt.Errorf("missing APIKey"))
+		}
+		// TODO: improve api key handling and make it dynamic instead of hardcoded
+		if strings.Compare(apiKey, choreListID) == 0 {
+			return srvu.Err(http.StatusUnauthorized, fmt.Errorf("invalid APIKey"))
+		}
+		cl, err := cdb.New(db).GetChoreListWithoutUser(ctx, choreListID)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, err)
+		}
+		chores, err := cdb.New(db).GetChoresByList(ctx, choreListID)
+		if err != nil {
+			return srvu.Err(http.StatusInternalServerError, err)
+		}
+		return view.ChoreListIcs(w, r, &ChoreListIcsView{
+			ID:     cl.ID,
+			Name:   cl.Name,
+			Chores: ChoresFromDb(chores),
+		})
+	})
+}
+
+func ChoreListAPIMux(db *sql.DB, view *View, apiKey string) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.Handle("GET /api/chore-lists/{choreListID}/ics", APIChoreListIcsFile(db, view, apiKey))
 	return mux
 }

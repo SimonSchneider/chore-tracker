@@ -34,7 +34,7 @@ func LoginPage(view *View) http.Handler {
 	})
 }
 
-func Mux(db *sql.DB, view *View, authConfig auth.Config) http.Handler {
+func Mux(db *sql.DB, view *View, authConfig auth.Config, apiKey string) http.Handler {
 	inviteStore := &InviteStore{db: db, view: view}
 	mux := http.NewServeMux()
 	mux.Handle("GET /login", srvu.With(LoginPage(view), authConfig.Middleware(true, true)))
@@ -44,6 +44,7 @@ func Mux(db *sql.DB, view *View, authConfig auth.Config) http.Handler {
 
 	httpu.HandleNested(mux, "/invites/", auth.InviteHandler(inviteStore, authConfig))
 	mux.Handle("/chore-lists/", srvu.With(ChoreListMux(db, view, inviteStore), authConfig.Middleware(false, false)))
+	mux.Handle("/api/chore-lists/", srvu.With(ChoreListAPIMux(db, view, apiKey)))
 	mux.Handle("/chores/", srvu.With(ChoreMux(db, view), authConfig.Middleware(false, false)))
 	mux.Handle("/{$}", http.RedirectHandler("/chore-lists/", http.StatusFound))
 	return mux
@@ -56,7 +57,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, 
 	}
 	public, tmplProv, err := templ.GetPublicAndTemplates(choretracker.StaticEmbeddedFS, &templ.Config{
 		Watch:        cfg.Watch,
-		TmplPatterns: []string{"templates/*.gohtml"},
+		TmplPatterns: []string{"templates/*.gohtml", "templates/*.goics"},
 	})
 	if err != nil {
 		return fmt.Errorf("sub static: %w", err)
@@ -102,7 +103,7 @@ func RunCfg(ctx context.Context, stdout io.Writer, cfg Config, public fs.FS, tmp
 
 	mux := http.NewServeMux()
 	httpu.HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
-	mux.Handle("/", Mux(db, view, authConfig))
+	mux.Handle("/", Mux(db, view, authConfig, cfg.ApiKey))
 
 	srv := &http.Server{
 		BaseContext: func(listener net.Listener) context.Context {
@@ -156,6 +157,7 @@ type Config struct {
 	Watch  bool
 	DbURL  string
 	GenInv bool
+	ApiKey string
 }
 
 func parseConfig(args []string, getEnv func(string) string) (cfg Config, err error) {
