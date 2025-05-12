@@ -7,8 +7,8 @@ PRODID:-//chore-tracker//EN
 BEGIN:VEVENT
 UID:{{ .ID }}@chore-tracker
 DTSTAMP:{{ .LastCompletion.ToStdTime.Format "20060102" }}T000000Z
-DTSTART;VALUE=DATE:{{ .NextCompletion.ToStdTime.Format "20060102" }}
-DTEND;VALUE=DATE:{{ (.NextCompletion.Add 1).ToStdTime.Format "20060102" }}
+DTSTART;VALUE=DATE:{{ ( $.NextCompletionOf .).ToStdTime.Format "20060102" }}
+DTEND;VALUE=DATE:{{ (( $.NextCompletionOf .).Add 1).ToStdTime.Format "20060102" }}
 SUMMARY:{{ .Name }}
 END:VEVENT
 {{ end }}

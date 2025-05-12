@@ -349,6 +349,7 @@ func APIChoreListIcsFile(db *sql.DB, view *View, apiKey string) http.Handler {
 		return view.ChoreListIcs(w, r, &ChoreListIcsView{
 			ID:     cl.ID,
 			Name:   cl.Name,
+			Today:  date.Today(),
 			Chores: ChoresFromDb(chores),
 		})
 	})

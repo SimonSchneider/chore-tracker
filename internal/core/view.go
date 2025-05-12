@@ -225,7 +225,15 @@ func (v *View) LoginPage(w http.ResponseWriter, r *http.Request) error {
 type ChoreListIcsView struct {
 	ID     string
 	Name   string
+	Today  date.Date
 	Chores []Chore
+}
+
+func (v *ChoreListIcsView) NextCompletionOf(c Chore) date.Date {
+	if c.NextCompletion().After(v.Today) {
+		return c.NextCompletion()
+	}
+	return v.Today
 }
 
 func (v *View) ChoreListIcs(w http.ResponseWriter, r *http.Request, d *ChoreListIcsView) error {
