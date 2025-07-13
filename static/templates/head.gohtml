@@ -3,4 +3,12 @@
 <meta name="color-scheme" content="light dark"/>
 <link rel="stylesheet" href="/static/public/styles-v8.css">
 <link rel="icon" href="/static/public/favicon.webp">
+<link rel="manifest" href="/static/public/manifest.json">
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/public/sw.js')
+            .then(() => console.log("Service Worker registered"))
+            .catch(err => console.error("Service Worker registration failed:", err));
+    }
+</script>
 <title>{{ . }}</title>

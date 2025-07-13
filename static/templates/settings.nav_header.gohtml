@@ -1,4 +1,23 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/chore.SettingsView*/ -}}
+<script>
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        document.getElementById('installBtn').addEventListener('click', () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                console.log('User choice:', choiceResult.outcome);
+                deferredPrompt = null;
+            });
+        });
+    });
+</script>
+<form id="logout-form" method="post" action="/logout">
+    <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
+</form>
 <nav class="nav">
     <ul class="nav-left">
         <li>
@@ -12,13 +31,13 @@
     <h1>Settings</h1>
     <ul class="nav-right">
         <li>
-            <form method="post" action="/logout">
-                <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
-                <button type="submit" class="adorned-button">
+            <div class="group">
+                <button id="installBtn" class="button">Install</button>
+                <button type="submit" form="logout-form" class="adorned-button">
                     <img alt="logout" src="/static/public/icons/logout.svg" width="24" height="24"/>
                     Logout
                 </button>
-            </form>
+            </div>
         </li>
     </ul>
 </nav>

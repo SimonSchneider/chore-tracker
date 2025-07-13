@@ -1,0 +1,15 @@
+{
+  "name": "Chores",
+  "short_name": "Chores",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/static/public/favicon.webp",
+      "sizes": "1024x1024",
+      "type": "image/webp"
+    }
+  ]
+}
