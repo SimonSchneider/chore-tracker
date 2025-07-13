@@ -86,7 +86,7 @@ func Setup() (context.Context, *Client, context.CancelFunc) {
 		},
 		RefreshCookie: auth.CookieConfig{},
 	}
-	mux := core.Mux(db, view, authCfg)
+	mux := core.Mux(db, view, authCfg, "")
 	client := &Client{db: db, mux: mux, tokenStore: tokenStore, tmpl: tplProv, authCookieName: authCfg.SessionCookie.Name}
 	return ctx, client, cancel
 }
