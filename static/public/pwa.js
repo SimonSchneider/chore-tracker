@@ -1,6 +1,5 @@
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/static/public/sw.js')
-        .then(() => console.log("Service Worker registered"))
         .catch(err => console.error("Service Worker registration failed:", err));
 }
 
@@ -23,18 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(refreshButtonId)?.addEventListener("click", refreshIfVisible)
 
 
-    let deferredPrompt;
+    const installButton = document.getElementById("install-button")
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        document.getElementById(installButtonId)?.addEventListener('click', () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                console.log('User choice:', choiceResult.outcome);
-                deferredPrompt = null;
+    if (installButton) {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            installButton.addEventListener('click', () => {
+                e.prompt();
+                e.userChoice.then((choiceResult) => {
+                    console.log('User choice:', choiceResult.outcome);
+                });
             });
         });
-    });
+    }
 })
