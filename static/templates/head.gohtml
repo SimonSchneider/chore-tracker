@@ -4,11 +4,17 @@
 <link rel="stylesheet" href="/static/public/styles-v8.css">
 <link rel="icon" href="/static/public/favicon.webp">
 <link rel="manifest" href="/static/public/manifest.json">
+<script src="/static/public/pwa.js"></script>
 <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/static/public/sw.js')
-            .then(() => console.log("Service Worker registered"))
-            .catch(err => console.error("Service Worker registration failed:", err));
-    }
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!(isStandalone && isIOS)) {
+            document.getElementById('refresh-button')?.remove();
+        }
+        if (isStandalone) {
+            document.getElementById('install-button')?.remove();
+        }
+    })
 </script>
 <title>{{ . }}</title>

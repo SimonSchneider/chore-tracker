@@ -11,5 +11,20 @@
       "sizes": "1024x1024",
       "type": "image/webp"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/public/img/desktop.png",
+      "sizes": "1896x1238",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Home screen showing main navigation and featured content"
+    },
+    {
+      "src": "/static/public/img/mobile.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "label": "Home screen showing main navigation and featured content"
+    }
   ]
 }
