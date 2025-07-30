@@ -1,17 +1,17 @@
-<nav class="nav">
-    <ul class="nav-left">
+<nav class="navbar bg-base-100 shadow-sm bg-primary">
+    <ul class="navbar-start">
         <li>
         </li>
     </ul>
-    <h1>Lists</h1>
-    <ul class="nav-right">
+    <h1 class="navbar-center text-lg font-semibold">Lists</h1>
+    <ul class="navbar-end">
         <li>
-            <div class="group">
-                <a href="/settings?prev={{.CurrPath}}" class="icon-button button">
+            <div class="join">
+                <a href="/settings?prev={{.CurrPath}}" class="btn btn-square join-item">
                     <img draggable="false" alt="settings" src="/static/public/icons/settings.svg" width="24"
                          height="24"/>
                 </a>
-                <a href="/chore-lists/new?prev={{ .CurrPath }}" class="icon-button button">
+                <a href="/chore-lists/new?prev={{ .CurrPath }}" class="btn btn-square join-item">
                     <img draggable="false" alt="create chore list" src="/static/public/icons/plus.svg" width="24"
                          height="24"/>
                 </a>
