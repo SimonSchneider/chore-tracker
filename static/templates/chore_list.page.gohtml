@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-{{ template "head.gohtml" "Chores" }}
+    {{ template "head.gohtml" "Chores" }}
 </head>
 <body>
 <header>
@@ -51,9 +51,14 @@
                                         </button>
                                     {{ end }}
                                 </div>
-                                <p class="name">
-                                    {{ .Name }}
-                                </p>
+                                {{ if .Link }}
+                                    <a class="name" style="text-decoration: underline" target="_blank" rel="noopener"
+                                       href="{{.Link}}">{{ .Name }}</a>
+                                {{ else }}
+                                    <p class="name">
+                                        {{ .Name }}
+                                    </p>
+                                {{ end }}
                                 {{/*                                {{ if eq .RepeatsLeft 1 }}*/}}
                                 {{/*                                    <div class="dot" style="flex-shrink: 0"></div>*/}}
                                 {{/*                                {{ end }}*/}}

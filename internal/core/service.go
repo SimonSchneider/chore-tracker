@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/sqlu"
 	"net/http"
 	"strconv"
 )
@@ -16,6 +17,7 @@ type Input struct {
 	ChoreListID string
 	Interval    date.Duration
 	Repeats     int64
+	Link        string
 	Date        date.Date
 }
 
@@ -49,6 +51,7 @@ func (i *Input) FromForm(r *http.Request) error {
 	if err := parse(&i.Date, date.ParseDate, r.FormValue("date"), 0); err != nil {
 		return fmt.Errorf("invalid date: %w", err)
 	}
+	i.Link = r.FormValue("link")
 	return nil
 }
 
@@ -140,6 +143,7 @@ func Create(ctx context.Context, db *sql.DB, today date.Date, userID string, inp
 		LastCompletion: int64(input.Date),
 		RepeatsLeft:    input.Repeats,
 		CreatedBy:      userID,
+		Link:           sqlu.NullString(input.Link),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating chore: %w", err)
@@ -161,6 +165,7 @@ func Update(ctx context.Context, db *sql.DB, prev *Chore, input Input) (*Chore, 
 		Interval:       int64(input.Interval),
 		RepeatsLeft:    input.Repeats,
 		LastCompletion: int64(input.Date),
+		Link:           sqlu.NullString(input.Link),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("updating chore: %w", err)

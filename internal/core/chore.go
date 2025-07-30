@@ -23,6 +23,7 @@ type Chore struct {
 	ID             string
 	Name           string
 	ChoreType      string
+	Link           string
 	CreatedAt      date.Date
 	Interval       date.Duration
 	LastCompletion date.Date
@@ -71,6 +72,7 @@ func ChoreFromDb(row cdb.Chore) Chore {
 		ID:             row.ID,
 		Name:           row.Name,
 		ChoreType:      row.ChoreType,
+		Link:           row.Link.String,
 		CreatedAt:      date.Date(row.CreatedAt),
 		Interval:       date.Duration(row.Interval),
 		LastCompletion: date.Date(row.LastCompletion),

@@ -19,6 +19,7 @@ type Chore struct {
 	CreatedBy      string
 	RepeatsLeft    int64
 	ChoreType      string
+	Link           sql.NullString
 }
 
 type ChoreEvent struct {
