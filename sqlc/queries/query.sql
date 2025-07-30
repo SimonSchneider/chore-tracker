@@ -49,7 +49,7 @@ SELECT *
 FROM chore
 WHERE chore_list_id = ?
   AND NOT repeats_left = 0
-ORDER BY last_completion DESC, name, id;
+ORDER BY name, id;
 
 -- name: GetChoreListByUser :one
 SELECT cl.*

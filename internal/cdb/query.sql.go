@@ -372,7 +372,7 @@ SELECT id, name, interval, last_completion, snoozed_for, created_at, chore_list_
 FROM chore
 WHERE chore_list_id = ?
   AND NOT repeats_left = 0
-ORDER BY last_completion DESC, name, id
+ORDER BY name, id
 `
 
 func (q *Queries) GetChoresByList(ctx context.Context, choreListID string) ([]Chore, error) {

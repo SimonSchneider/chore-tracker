@@ -22,7 +22,7 @@ type ListView struct {
 }
 
 func NewListView(today date.Date, chores []Chore) *ListView {
-	sort.Slice(chores, func(i, j int) bool {
+	sort.SliceStable(chores, func(i, j int) bool {
 		return chores[i].NextCompletion().Before(chores[j].NextCompletion())
 	})
 	return &ListView{Chores: chores, Today: today}
