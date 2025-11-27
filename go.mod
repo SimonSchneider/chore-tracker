@@ -1,6 +1,6 @@
 module github.com/SimonSchneider/chore-tracker
 
-go 1.24.0
+go 1.25.4
 
 require (
 	github.com/SimonSchneider/goslu v0.1.5

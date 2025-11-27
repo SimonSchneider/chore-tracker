@@ -49,21 +49,3 @@ func (s *InMemorySessionStore) VerifySession(ctx context.Context, token string, 
 	}
 	return *session, session.ExpiresAt.After(now), nil
 }
-
-func (s *InMemorySessionStore) VerifyCSRFToken(ctx context.Context, userID, csrfToken string, now time.Time) (bool, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	sessions, ok := s.userSessions[userID]
-	if !ok {
-		return false, nil
-	}
-	if len(sessions) == 0 {
-		return false, nil
-	}
-	for _, session := range sessions {
-		if session.CSRFToken == csrfToken {
-			return session.ExpiresAt.After(now), nil
-		}
-	}
-	return false, nil
-}

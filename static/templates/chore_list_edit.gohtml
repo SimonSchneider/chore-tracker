@@ -1,22 +1,18 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/chore.ChoreListView*/ -}}
 {{ if .IsEdit }}
     <form id="create-invite-form" method="post" action="/chore-lists/{{ .List.ID }}/invites/">
-        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     </form>
     <form id="leave-form" method="post" action="/chore-lists/{{ .List.ID }}/leave">
-        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     </form>
     {{ range .Invites }}
         <form id="delete-invite-{{ .ID }}" method="post"
               action="/chore-lists/{{ $.List.ID }}/invites/{{ .ID }}/delete">
-            <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
         </form>
     {{ end }}
 {{ end }}
 <form method="post"
       {{ if .IsEdit }}action="/chore-lists/{{ .List.ID }}?next={{.RequestDetails.PrevPath}}"
       {{ else }}action="/chore-lists/"{{ end }}>
-    <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     <div class="modal-body">
         <fieldset role="group">
             <input autofocus name="name" style="flex-grow: 8" aria-label="chore list name"

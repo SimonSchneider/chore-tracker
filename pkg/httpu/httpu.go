@@ -36,7 +36,7 @@ func RedirectToReferer(w http.ResponseWriter, r *http.Request, fb string) {
 }
 
 func RedirectToNext(w http.ResponseWriter, r *http.Request, fb string) {
-	next := r.URL.Query().Get("next")
+	next := r.FormValue("next")
 	if next == "" {
 		next = fb
 	}

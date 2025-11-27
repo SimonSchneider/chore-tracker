@@ -3,11 +3,12 @@ package auth
 import (
 	"context"
 	"fmt"
-	"github.com/SimonSchneider/goslu/sid"
-	"github.com/SimonSchneider/goslu/srvu"
 	"net/http"
 	"path"
 	"time"
+
+	"github.com/SimonSchneider/goslu/sid"
+	"github.com/SimonSchneider/goslu/srvu"
 )
 
 type Provider interface {
@@ -17,7 +18,6 @@ type Provider interface {
 type Session struct {
 	UserID    string
 	Token     string
-	CSRFToken string
 	ExpiresAt time.Time
 }
 
@@ -25,7 +25,6 @@ type SessionStore interface {
 	StoreSession(ctx context.Context, session Session) error
 	DeleteSessions(ctx context.Context, userID string) error
 	VerifySession(ctx context.Context, token string, now time.Time) (Session, bool, error)
-	VerifyCSRFToken(ctx context.Context, userID, csrfToken string, now time.Time) (bool, error)
 }
 
 type CookieConfig struct {
@@ -44,7 +43,6 @@ type Config struct {
 	DefaultLoginSuccessRedirect string
 	LoginFailedRedirect         string
 	SessionsPath                string
-	CSRFTokenFieldName          string
 	SessionCookie               CookieConfig
 	RefreshCookie               CookieConfig
 }
@@ -196,12 +194,6 @@ func (c *Config) Middleware(allowUnauthenticated, followRedirect bool) srvu.Midd
 					http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
 					return
 				}
-				if r.Method == http.MethodPut || r.Method == http.MethodDelete || r.Method == http.MethodPost || r.Method == http.MethodPatch {
-					if ok, err := c.SessionCookie.Store.VerifyCSRFToken(r.Context(), session.UserID, r.FormValue(c.CSRFTokenFieldName), now); err != nil || !ok {
-						http.Error(w, "invalid csrf token", http.StatusForbidden)
-						return
-					}
-				}
 				h.ServeHTTP(w, r.WithContext(withSession(r.Context(), session)))
 			}
 		})
@@ -271,14 +263,9 @@ func generateSession(userID string, expire time.Duration, tokenLength int) (Sess
 	if err != nil {
 		return Session{}, fmt.Errorf("failed to generate session token: %w", err)
 	}
-	csrfToken, err := sid.NewString(tokenLength)
-	if err != nil {
-		return Session{}, fmt.Errorf("failed to generate CSRF token: %w", err)
-	}
 	expiresAt := time.Now().Add(expire)
 	return Session{
 		Token:     sessionToken,
-		CSRFToken: csrfToken,
 		ExpiresAt: expiresAt,
 		UserID:    userID,
 	}, nil

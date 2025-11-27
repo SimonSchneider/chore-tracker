@@ -5,14 +5,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	choretracker "github.com/SimonSchneider/chore-tracker"
-	"github.com/SimonSchneider/chore-tracker/internal/cdb"
-	"github.com/SimonSchneider/chore-tracker/pkg/auth"
-	"github.com/SimonSchneider/chore-tracker/pkg/httpu"
-	"github.com/SimonSchneider/goslu/config"
-	"github.com/SimonSchneider/goslu/migrate"
-	"github.com/SimonSchneider/goslu/srvu"
-	"github.com/SimonSchneider/goslu/templ"
 	"io"
 	"io/fs"
 	"log"
@@ -21,6 +13,15 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	choretracker "github.com/SimonSchneider/chore-tracker"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/pkg/auth"
+	"github.com/SimonSchneider/chore-tracker/pkg/httpu"
+	"github.com/SimonSchneider/goslu/config"
+	"github.com/SimonSchneider/goslu/migrate"
+	"github.com/SimonSchneider/goslu/srvu"
+	"github.com/SimonSchneider/goslu/templ"
 )
 
 func LoginPage(view *View) http.Handler {
@@ -84,7 +85,6 @@ func RunCfg(ctx context.Context, stdout io.Writer, cfg Config, public fs.FS, tmp
 		LoginFailedRedirect:         "/login",
 		DefaultLoginSuccessRedirect: "/",
 		SessionsPath:                "/sessions/",
-		CSRFTokenFieldName:          "CSRFToken",
 		SessionCookie: auth.CookieConfig{
 			Name:          "chore_session",
 			Expire:        30 * time.Minute,
@@ -102,7 +102,7 @@ func RunCfg(ctx context.Context, stdout io.Writer, cfg Config, public fs.FS, tmp
 	}
 
 	mux := http.NewServeMux()
-	httpu.HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), srvu.WithCacheCtrlHeader(365*24*time.Hour)))
+	httpu.HandleNested(mux, "GET /static/public/", srvu.With(http.FileServerFS(public), http.NewCrossOriginProtection().Handler, srvu.WithCacheCtrlHeader(365*24*time.Hour)))
 	mux.Handle("/", Mux(db, view, authConfig, cfg.ApiKey))
 
 	srv := &http.Server{
