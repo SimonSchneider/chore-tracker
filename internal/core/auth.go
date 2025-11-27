@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/SimonSchneider/chore-tracker/internal/cdb"
 	"github.com/SimonSchneider/chore-tracker/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"time"
 )
 
 type AuthProvider struct {
@@ -40,19 +41,8 @@ type DBTokenStore struct {
 	DB *sql.DB
 }
 
-func (s *DBTokenStore) VerifyCSRFToken(ctx context.Context, userID, csrfToken string, now time.Time) (bool, error) {
-	res, err := cdb.New(s.DB).GetCsrfTokenByUserAndCsrfToken(ctx, cdb.GetCsrfTokenByUserAndCsrfTokenParams{UserID: userID, CsrfToken: csrfToken, ExpiresAt: now.UnixMilli()})
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-	return res == 1, nil
-}
-
 func (s *DBTokenStore) StoreSession(ctx context.Context, session auth.Session) error {
-	return cdb.New(s.DB).CreateToken(ctx, cdb.CreateTokenParams{UserID: session.UserID, Token: session.Token, CsrfToken: session.CSRFToken, ExpiresAt: session.ExpiresAt.UnixMilli()})
+	return cdb.New(s.DB).CreateToken(ctx, cdb.CreateTokenParams{UserID: session.UserID, Token: session.Token, ExpiresAt: session.ExpiresAt.UnixMilli()})
 }
 
 func (s *DBTokenStore) DeleteSessions(ctx context.Context, userID string) error {
@@ -70,7 +60,6 @@ func (s *DBTokenStore) VerifySession(ctx context.Context, token string, now time
 	return auth.Session{
 		UserID:    res.UserID,
 		Token:     res.Token,
-		CSRFToken: res.CsrfToken,
 		ExpiresAt: time.UnixMilli(res.ExpiresAt),
 	}, true, nil
 }

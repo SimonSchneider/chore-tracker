@@ -3,13 +3,13 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SimonSchneider/chore-tracker/internal/cdb"
-	"github.com/SimonSchneider/chore-tracker/pkg/auth"
-	"github.com/SimonSchneider/goslu/date"
-	"github.com/SimonSchneider/goslu/templ"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
+	"github.com/SimonSchneider/goslu/date"
+	"github.com/SimonSchneider/goslu/templ"
 )
 
 type RequestDetails struct {
@@ -18,10 +18,6 @@ type RequestDetails struct {
 
 func (r *RequestDetails) CurrPath() string {
 	return r.req.URL.RequestURI()
-}
-
-func (r *RequestDetails) CSRFToken() string {
-	return auth.MustGetSession(r.req.Context()).CSRFToken
 }
 
 func (r *RequestDetails) PrevPath() string {

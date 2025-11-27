@@ -4,13 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	choretracker "github.com/SimonSchneider/chore-tracker"
-	"github.com/SimonSchneider/chore-tracker/internal/cdb"
-	"github.com/SimonSchneider/chore-tracker/internal/core"
-	"github.com/SimonSchneider/chore-tracker/pkg/auth"
-	"github.com/SimonSchneider/goslu/srvu"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
 	"html/template"
 	"io"
 	"log"
@@ -20,6 +13,14 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	choretracker "github.com/SimonSchneider/chore-tracker"
+	"github.com/SimonSchneider/chore-tracker/internal/cdb"
+	"github.com/SimonSchneider/chore-tracker/internal/core"
+	"github.com/SimonSchneider/chore-tracker/pkg/auth"
+	"github.com/SimonSchneider/goslu/srvu"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func Panic(err error) {
@@ -77,7 +78,6 @@ func Setup() (context.Context, *Client, context.CancelFunc) {
 		LoginFailedRedirect:         "/login",
 		RedirectParam:               "redirect",
 		SessionsPath:                "/sessions/",
-		CSRFTokenFieldName:          "CSRFToken",
 		SessionCookie: auth.CookieConfig{
 			Name:        "session",
 			Expire:      1 * time.Hour,
@@ -106,7 +106,6 @@ func (c *Client) DBQuery() *cdb.Queries {
 type ClientToken struct {
 	cookieName string
 	val        string
-	CSRF       string
 }
 
 func (t ClientToken) Auth(r *http.Request) *http.Request {
@@ -120,16 +119,14 @@ func (c *Client) NewToken(ctx context.Context) (*ClientToken, error) {
 		return nil, err
 	}
 	token := core.NewId()
-	csrfToken := core.NewId()
 	if err := c.tokenStore.StoreSession(ctx, auth.Session{
 		UserID:    u.ID,
 		Token:     token,
-		CSRFToken: csrfToken,
 		ExpiresAt: time.Now().Add(1 * time.Hour),
 	}); err != nil {
 		return nil, err
 	}
-	return &ClientToken{cookieName: c.authCookieName, val: token, CSRF: csrfToken}, nil
+	return &ClientToken{cookieName: c.authCookieName, val: token}, nil
 }
 
 func (c *Client) Serve(r *http.Request) *httptest.ResponseRecorder {
@@ -164,11 +161,10 @@ func (r *ChoreReq) Method(method string, uri string, body io.Reader) *ChoreReq {
 	return r
 }
 
-func (r *ChoreReq) Form(method, uri, csrf string, form map[string]string) *ChoreReq {
+func (r *ChoreReq) Form(method, uri string, form map[string]string) *ChoreReq {
 	if form == nil {
 		form = make(map[string]string)
 	}
-	form["CSRFToken"] = csrf
 	r.req = NewFormReq(r.ctx, method, uri, form)
 	return r
 }
@@ -211,7 +207,7 @@ func (r *ChoreReq) DoAndFollow(status int) (*http.Response, error) {
 }
 
 func NewChoreList(ctx context.Context, client *Client, token *ClientToken, formVals map[string]string) (*core.ChoreListView, error) {
-	_, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chore-lists/", token.CSRF, formVals).DoAndFollow(http.StatusSeeOther)
+	_, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chore-lists/", formVals).DoAndFollow(http.StatusSeeOther)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +228,7 @@ func findInSlice[T any](slice []T, pred func(T) bool) *T {
 }
 
 func NewChore(ctx context.Context, client *Client, token *ClientToken, formVals map[string]string) (*core.Chore, error) {
-	if _, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chores/", token.CSRF, formVals).DoAndFollow(http.StatusSeeOther); err != nil {
+	if _, err := NewChoreReq(ctx, client).Auth(token).Form("POST", "/chores/", formVals).DoAndFollow(http.StatusSeeOther); err != nil {
 		return nil, err
 	}
 	cl := GetTpl[core.ChoreListView](client.tmpl, "chore_list.page.gohtml")

@@ -2,10 +2,11 @@ package core_test
 
 import (
 	"fmt"
-	"github.com/SimonSchneider/chore-tracker/internal/core"
-	"github.com/SimonSchneider/goslu/date"
 	"net/http"
 	"testing"
+
+	"github.com/SimonSchneider/chore-tracker/internal/core"
+	"github.com/SimonSchneider/goslu/date"
 )
 
 func TestCRUDChore(t *testing.T) {
@@ -33,7 +34,7 @@ func TestCRUDChore(t *testing.T) {
 			t.Fatalf("chore list id is not the same")
 		}
 		t.Run("Update", func(t *testing.T) {
-			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), tok.CSRF, map[string]string{
+			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), map[string]string{
 				"name":     "int2",
 				"interval": "2w",
 			}).DoAndFollow(http.StatusSeeOther); err != nil {
@@ -68,7 +69,7 @@ func TestCRUDChore(t *testing.T) {
 			t.Fatalf("chore list id is not the same")
 		}
 		t.Run("Update", func(t *testing.T) {
-			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), tok.CSRF, map[string]string{
+			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), map[string]string{
 				"name":    "once2",
 				"repeats": "1",
 			}).DoAndFollow(http.StatusSeeOther); err != nil {
@@ -101,7 +102,7 @@ func TestCRUDChore(t *testing.T) {
 			t.Fatalf("chore list id is not the same")
 		}
 		t.Run("Update", func(t *testing.T) {
-			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), tok.CSRF, map[string]string{
+			if _, err := NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s", chore.ID), map[string]string{
 				"name":    "date2",
 				"repeats": "1",
 				"date":    date.Today().Add(1).String(),
@@ -129,7 +130,7 @@ func TestListViewChores(t *testing.T) {
 			"choreListID": cl.List.ID,
 			"interval":    Must(date.ParseDuration(fmt.Sprintf("1w%dd", len(createdChrs)-i))).String(),
 		}))
-		Must(NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s/complete", ch.ID), tok.CSRF, nil).DoAndFollow(http.StatusSeeOther))
+		Must(NewChoreReq(ctx, client).Auth(tok).Form("POST", fmt.Sprintf("/chores/%s/complete", ch.ID), nil).DoAndFollow(http.StatusSeeOther))
 		createdChrs[i] = ch
 	}
 	Must(NewChoreReq(ctx, client).Auth(tok).Get(fmt.Sprintf("/chore-lists/%s", cl.List.ID)).DoAndExp(http.StatusOK))

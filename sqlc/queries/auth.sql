@@ -1,7 +1,7 @@
 -- name: CreateToken :exec
 INSERT INTO tokens
-    (user_id, token, csrf_token, expires_at)
-VALUES (?, ?, ?, ?);
+    (user_id, token, expires_at)
+VALUES (?, ?, ?);
 
 -- name: GetToken :one
 SELECT *
@@ -18,10 +18,3 @@ WHERE user_id = ?;
 SELECT *
 FROM tokens
 WHERE user_id = ?;
-
--- name: GetCsrfTokenByUserAndCsrfToken :one
-SELECT COUNT(*)
-FROM tokens
-WHERE user_id = ?
-  AND csrf_token = ?
-  AND expires_at > ?;

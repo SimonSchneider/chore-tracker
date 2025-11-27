@@ -1,12 +1,10 @@
 {{- /*gotype: github.com/SimonSchneider/chore-tracker/internal/core.ChoreEditView*/ -}}
 {{ if .IsEdit }}
     <form id="delete-form" method="post" action="/chores/{{.Chore.ID}}/delete?next={{.PrevPath}}">
-        <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     </form>
 {{ end }}
 <form id="select-type-form" method="get"><input type="hidden" name="prev" value="{{.PrevPath}}"></form>
 <form method="post" {{if .IsEdit }} action="/chores/{{.Chore.ID}}?next={{.PrevPath}}" {{ else }} action="/chores/" {{ end }}>
-    <input type="hidden" name="CSRFToken" value="{{.CSRFToken}}"/>
     <div class="modal-body">
         <fieldset class="group column" form="select-type-form" onchange="this.form.submit()">
             <label class="button adorned-button">

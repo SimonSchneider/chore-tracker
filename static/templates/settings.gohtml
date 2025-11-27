@@ -29,7 +29,6 @@
                     {{ end }}
                     {{/*                    TODO: Fix this delete button */}}
                     <form method="post" action="/invites/{{ .ID }}/delete?next={{$.CurrPath}}">
-                        <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                         <button class="icon-button" aria-label="delete" type="submit">
                             <img src="/static/public/icons/x.svg" alt="delete" width="24" height="24">
                         </button>

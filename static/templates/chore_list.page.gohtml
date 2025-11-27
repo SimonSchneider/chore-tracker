@@ -26,15 +26,12 @@
                             <div class="chore-container" id="chore-{{.ID}}">
                                 <form id="complete-{{.ID}}-form" method="post"
                                       action="/chores/{{.ID}}/complete?next={{ $.CurrPath }}">
-                                    <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                                 </form>
                                 <form id="expedite-{{.ID}}-form" method="post"
                                       action="/chores/{{.ID}}/expedite?next={{ $.CurrPath }}">
-                                    <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                                 </form>
                                 <form id="snooze-{{.ID}}-form" method="post"
                                       action="/chores/{{.ID}}/snooze?next={{ $.CurrPath }}">
-                                    <input type="hidden" name="CSRFToken" value="{{$.CSRFToken}}"/>
                                 </form>
                                 <div class="group">
                                     <button class="icon-button" type="submit" form="complete-{{.ID}}-form">
